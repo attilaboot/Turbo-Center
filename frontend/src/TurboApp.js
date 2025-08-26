@@ -1153,7 +1153,14 @@ const NewWorkOrder = () => {
       setVehicles([]);
       setWorkOrderData({
         turbo_code: '',
+        car_make: '',
+        car_model: '',
+        car_year: '',
+        license_plate: '',
+        engine_code: '',
+        general_notes: '',
         parts: [],
+        processes: [],
         status_passed: false,
         status_refused: false,
         cleaning_price: 170,
