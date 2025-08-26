@@ -74,9 +74,6 @@ const PartsTable = ({ parts, onStockMovement, onEdit, onDelete, config }) => {
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {config.labels.name}
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 {config.labels.code}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -84,6 +81,9 @@ const PartsTable = ({ parts, onStockMovement, onEdit, onDelete, config }) => {
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 {config.labels.supplier}
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {config.labels.notes}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 {config.labels.stock}
@@ -97,9 +97,6 @@ const PartsTable = ({ parts, onStockMovement, onEdit, onDelete, config }) => {
             {parts.map((part) => (
               <tr key={part.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {part.name}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {part.code}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -107,6 +104,9 @@ const PartsTable = ({ parts, onStockMovement, onEdit, onDelete, config }) => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {part.supplier_name}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title={part.notes || "-"}>
+                  {part.notes || "-"}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   <span className={`font-bold ${part.stock_quantity <= 0 ? 'text-red-600' : part.stock_quantity <= 5 ? 'text-yellow-600' : 'text-green-600'}`}>
