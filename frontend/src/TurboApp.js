@@ -1293,7 +1293,7 @@ const NewWorkOrder = () => {
                             <div className="text-xs text-gray-500">{part.supplier}</div>
                           </div>
                           <div className="font-medium text-blue-600">
-                            {part.price.toFixed(0)}€
+                            {part.price.toFixed(0)} LEI
                           </div>
                         </label>
                       ))}
