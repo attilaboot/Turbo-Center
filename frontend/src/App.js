@@ -544,7 +544,7 @@ const Dashboard = () => {
         {stockModal && (
           <StockMovementModal
             partId={stockModal.partId}
-            partName={stockModal.partName}
+            partCode={stockModal.partCode}
             movementType={stockModal.movementType}
             onClose={() => setStockModal(null)}
             onSubmit={handleStockMovementSubmit}
