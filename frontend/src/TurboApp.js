@@ -606,8 +606,696 @@ const Clients = () => {
   );
 };
 
-// Simple placeholder components for now
-const WorkOrders = () => {
+// Settings Component
+const Settings = () => {
+  const [activeTab, setActiveTab] = useState('general');
+  const [config, setConfig] = useState(getAppConfig());
+  const [carMakes, setCarMakes] = useState([]);
+  const [carModels, setCarModels] = useState([]);
+  const [turboNotes, setTurboNotes] = useState([]);
+  const [carNotes, setCarNotes] = useState([]);
+  const [workProcesses, setWorkProcesses] = useState([]);
+  const [turboParts, setTurboParts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Form states
+  const [showCarMakeForm, setShowCarMakeForm] = useState(false);
+  const [showCarModelForm, setShowCarModelForm] = useState(false);
+  const [showTurboNoteForm, setShowTurboNoteForm] = useState(false);
+  const [showCarNoteForm, setShowCarNoteForm] = useState(false);
+  const [selectedMakeForModel, setSelectedMakeForModel] = useState('');
+
+  const [carMakeForm, setCarMakeForm] = useState({ name: '' });
+  const [carModelForm, setCarModelForm] = useState({ make_id: '', name: '', engine_codes: '', common_turbos: '' });
+  const [turboNoteForm, setTurboNoteForm] = useState({ turbo_code: '', note_type: 'WARNING', title: '', description: '' });
+  const [carNoteForm, setCarNoteForm] = useState({ car_make: '', car_model: '', note_type: 'WARNING', title: '', description: '' });
+
+  useEffect(() => {
+    loadAllData();
+  }, []);
+
+  const loadAllData = async () => {
+    setLoading(true);
+    await Promise.all([
+      loadCarMakes(),
+      loadWorkProcesses(),
+      loadTurboParts()
+    ]);
+    setLoading(false);
+  };
+
+  const loadCarMakes = async () => {
+    try {
+      const response = await axios.get(`${API}/car-makes`);
+      setCarMakes(response.data);
+    } catch (error) {
+      console.error('Hiba autó márkák betöltésekor:', error);
+    }
+  };
+
+  const loadCarModels = async (makeId) => {
+    try {
+      const response = await axios.get(`${API}/car-models/${makeId}`);
+      setCarModels(response.data);
+    } catch (error) {
+      console.error('Hiba autó modellek betöltésekor:', error);
+    }
+  };
+
+  const loadWorkProcesses = async () => {
+    try {
+      const response = await axios.get(`${API}/work-processes`);
+      setWorkProcesses(response.data);
+    } catch (error) {
+      console.error('Hiba munkafolyamatok betöltésekor:', error);
+    }
+  };
+
+  const loadTurboParts = async () => {
+    try {
+      const response = await axios.get(`${API}/turbo-parts`);
+      setTurboParts(response.data);
+    } catch (error) {
+      console.error('Hiba alkatrészek betöltésekor:', error);
+    }
+  };
+
+  // Configuration save
+  const handleConfigSave = () => {
+    saveAppConfig(config);
+    alert('Beállítások mentve! Az oldal automatikusan frissül...');
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 1000);
+  };
+
+  // Logo upload
+  const handleLogoUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      if (file.type.includes('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setConfig({
+            ...config,
+            logoUrl: e.target.result
+          });
+        };
+        reader.readAsDataURL(file);
+      } else {
+        alert('Kérlek, csak kép fájlokat (PNG, JPG) válassz!');
+      }
+    }
+  };
+
+  // Car Make functions
+  const handleAddCarMake = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(`${API}/car-makes`, carMakeForm);
+      setCarMakeForm({ name: '' });
+      setShowCarMakeForm(false);
+      loadCarMakes();
+    } catch (error) {
+      alert('Hiba: ' + (error.response?.data?.detail || 'Nem sikerült hozzáadni'));
+    }
+  };
+
+  // Car Model functions
+  const handleAddCarModel = async (e) => {
+    e.preventDefault();
+    try {
+      const modelData = {
+        make_id: carModelForm.make_id,
+        name: carModelForm.name,
+        engine_codes: carModelForm.engine_codes.split(',').map(s => s.trim()).filter(s => s),
+        common_turbos: carModelForm.common_turbos.split(',').map(s => s.trim()).filter(s => s)
+      };
+      await axios.post(`${API}/car-models`, modelData);
+      setCarModelForm({ make_id: '', name: '', engine_codes: '', common_turbos: '' });
+      setShowCarModelForm(false);
+      if (selectedMakeForModel) {
+        loadCarModels(selectedMakeForModel);
+      }
+    } catch (error) {
+      alert('Hiba: ' + (error.response?.data?.detail || 'Nem sikerült hozzáadni'));
+    }
+  };
+
+  // Turbo Note functions
+  const handleAddTurboNote = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(`${API}/turbo-notes`, turboNoteForm);
+      setTurboNoteForm({ turbo_code: '', note_type: 'WARNING', title: '', description: '' });
+      setShowTurboNoteForm(false);
+    } catch (error) {
+      alert('Hiba: ' + (error.response?.data?.detail || 'Nem sikerült hozzáadni'));
+    }
+  };
+
+  // Car Note functions
+  const handleAddCarNote = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(`${API}/car-notes`, carNoteForm);
+      setCarNoteForm({ car_make: '', car_model: '', note_type: 'WARNING', title: '', description: '' });
+      setShowCarNoteForm(false);
+    } catch (error) {
+      alert('Hiba: ' + (error.response?.data?.detail || 'Nem sikerült hozzáadni'));
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Betöltés...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-between items-center mb-8">
+          <div className="flex items-center gap-4">
+            {config.logoUrl && (
+              <img 
+                src={config.logoUrl} 
+                alt="Logo" 
+                className="h-16 w-16 object-contain rounded-lg shadow-md"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+            )}
+            <div>
+              <h1 className="text-4xl font-bold text-gray-800 mb-2">⚙️ SETTINGS</h1>
+              <p className="text-gray-600">Rendszer konfigurációk és beállítások</p>
+            </div>
+          </div>
+          <Link to="/" className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium">
+            🏠 Vissza a főoldalra
+          </Link>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="bg-white rounded-lg shadow-md mb-6">
+          <div className="flex border-b border-gray-200 overflow-x-auto">
+            <button
+              onClick={() => setActiveTab('general')}
+              className={`px-6 py-4 font-medium whitespace-nowrap ${activeTab === 'general' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              🏷️ Általános & Címkék
+            </button>
+            <button
+              onClick={() => setActiveTab('branding')}
+              className={`px-6 py-4 font-medium whitespace-nowrap ${activeTab === 'branding' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              🎨 Logo & Design
+            </button>
+            <button
+              onClick={() => setActiveTab('cars')}
+              className={`px-6 py-4 font-medium whitespace-nowrap ${activeTab === 'cars' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              🚗 Autó adatbázis
+            </button>
+            <button
+              onClick={() => setActiveTab('warnings')}
+              className={`px-6 py-4 font-medium whitespace-nowrap ${activeTab === 'warnings' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              🚨 Figyelmeztetések
+            </button>
+            <button
+              onClick={() => setActiveTab('parts')}
+              className={`px-6 py-4 font-medium whitespace-nowrap ${activeTab === 'parts' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              🔧 Alkatrészek & Munkák
+            </button>
+          </div>
+
+          <div className="p-6">
+            {/* General & Labels Tab */}
+            {activeTab === 'general' && (
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Általános beállítások és címkék</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Alkalmazás neve
+                    </label>
+                    <input
+                      type="text"
+                      value={config.appName}
+                      onChange={(e) => setConfig({...config, appName: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      placeholder="pl. Turbó Szerviz"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      "Ügyfelek" elnevezés
+                    </label>
+                    <input
+                      type="text"
+                      value={config.labels.clients}
+                      onChange={(e) => setConfig({...config, labels: {...config.labels, clients: e.target.value}})}
+                      className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      placeholder="pl. Kliensek, Vásárlók"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      "Munkalapok" elnevezés
+                    </label>
+                    <input
+                      type="text"
+                      value={config.labels.workOrders}
+                      onChange={(e) => setConfig({...config, labels: {...config.labels, workOrders: e.target.value}})}
+                      className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      placeholder="pl. Javítások, Megrendelések"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      "Alkatrészek" elnevezés
+                    </label>
+                    <input
+                      type="text"
+                      value={config.labels.parts}
+                      onChange={(e) => setConfig({...config, labels: {...config.labels, parts: e.target.value}})}
+                      className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      placeholder="pl. Tartozékok, Komponensek"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <button
+                    onClick={handleConfigSave}
+                    className="bg-green-500 text-white px-6 py-3 rounded hover:bg-green-600 font-medium"
+                  >
+                    💾 Általános beállítások mentése
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Logo & Design Tab */}
+            {activeTab === 'branding' && (
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Logo és Design</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="font-semibold mb-3">📷 Logo feltöltés</h4>
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                      {config.logoUrl ? (
+                        <div>
+                          <img 
+                            src={config.logoUrl} 
+                            alt="Current Logo" 
+                            className="mx-auto h-32 w-32 object-contain mb-4 rounded-lg shadow-md"
+                          />
+                          <p className="text-sm text-gray-600 mb-4">Jelenlegi logo</p>
+                        </div>
+                      ) : (
+                        <div className="mb-4">
+                          <div className="mx-auto h-32 w-32 bg-gray-200 rounded-lg flex items-center justify-center mb-4">
+                            <span className="text-gray-400 text-4xl">🖼️</span>
+                          </div>
+                          <p className="text-sm text-gray-600">Nincs logo feltöltve</p>
+                        </div>
+                      )}
+                      
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/jpg"
+                        onChange={handleLogoUpload}
+                        className="hidden"
+                        id="logo-upload"
+                      />
+                      <label
+                        htmlFor="logo-upload"
+                        className="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-600 font-medium"
+                      >
+                        📁 Logo kiválasztása
+                      </label>
+                      
+                      {config.logoUrl && (
+                        <button
+                          onClick={() => setConfig({...config, logoUrl: ''})}
+                          className="ml-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 font-medium"
+                        >
+                          🗑️ Logo törlése
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold mb-3">🎨 Design előnézet</h4>
+                    <div className="border rounded-lg p-4 bg-white">
+                      <div className="flex items-center gap-3 mb-4">
+                        {config.logoUrl && (
+                          <img 
+                            src={config.logoUrl} 
+                            alt="Logo Preview" 
+                            className="h-12 w-12 object-contain rounded shadow"
+                          />
+                        )}
+                        <div>
+                          <h5 className="text-xl font-bold text-gray-800">🔧 {config.appName}</h5>
+                          <p className="text-gray-600 text-sm">Teljes körű turbófeltöltő javítás kezelése</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <button
+                    onClick={handleConfigSave}
+                    className="bg-green-500 text-white px-6 py-3 rounded hover:bg-green-600 font-medium"
+                  >
+                    💾 Design beállítások mentése
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Car Database Tab */}
+            {activeTab === 'cars' && (
+              <div>
+                <h3 className="text-lg font-semibold mb-4">🚗 Autó adatbázis kezelése</h3>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Car Makes */}
+                  <div>
+                    <div className="flex justify-between items-center mb-4">
+                      <h4 className="font-semibold">Autó márkák ({carMakes.length})</h4>
+                      <button
+                        onClick={() => setShowCarMakeForm(true)}
+                        className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
+                      >
+                        ➕ Új márka
+                      </button>
+                    </div>
+
+                    {showCarMakeForm && (
+                      <form onSubmit={handleAddCarMake} className="mb-4 p-4 bg-green-50 rounded">
+                        <input
+                          type="text"
+                          placeholder="Márka neve (pl. BMW)"
+                          value={carMakeForm.name}
+                          onChange={(e) => setCarMakeForm({...carMakeForm, name: e.target.value})}
+                          className="w-full p-2 border border-gray-300 rounded mb-2"
+                          required
+                        />
+                        <div className="flex gap-2">
+                          <button type="submit" className="bg-green-500 text-white px-3 py-1 rounded text-sm">Hozzáadás</button>
+                          <button type="button" onClick={() => setShowCarMakeForm(false)} className="bg-gray-500 text-white px-3 py-1 rounded text-sm">Mégsem</button>
+                        </div>
+                      </form>
+                    )}
+
+                    <div className="max-h-64 overflow-y-auto space-y-2">
+                      {carMakes.map(make => (
+                        <div key={make.id} className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                          <span className="font-medium">{make.name}</span>
+                          <button
+                            onClick={() => {
+                              setSelectedMakeForModel(make.id);
+                              loadCarModels(make.id);
+                            }}
+                            className="bg-blue-500 text-white px-2 py-1 rounded text-xs"
+                          >
+                            Modellek
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Car Models */}
+                  <div>
+                    <div className="flex justify-between items-center mb-4">
+                      <h4 className="font-semibold">
+                        Autó modellek {selectedMakeForModel && `(${carModels.length})`}
+                      </h4>
+                      {selectedMakeForModel && (
+                        <button
+                          onClick={() => setShowCarModelForm(true)}
+                          className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
+                        >
+                          ➕ Új modell
+                        </button>
+                      )}
+                    </div>
+
+                    {showCarModelForm && (
+                      <form onSubmit={handleAddCarModel} className="mb-4 p-4 bg-green-50 rounded space-y-2">
+                        <input
+                          type="hidden"
+                          value={selectedMakeForModel}
+                          onChange={(e) => setCarModelForm({...carModelForm, make_id: e.target.value})}
+                        />
+                        <input
+                          type="text"
+                          placeholder="Modell neve (pl. X5)"
+                          value={carModelForm.name}
+                          onChange={(e) => setCarModelForm({...carModelForm, name: e.target.value})}
+                          className="w-full p-2 border border-gray-300 rounded"
+                          required
+                        />
+                        <input
+                          type="text"
+                          placeholder="Motorkódok (vesszővel elválasztva)"
+                          value={carModelForm.engine_codes}
+                          onChange={(e) => setCarModelForm({...carModelForm, engine_codes: e.target.value})}
+                          className="w-full p-2 border border-gray-300 rounded text-sm"
+                        />
+                        <div className="flex gap-2">
+                          <button type="submit" className="bg-green-500 text-white px-3 py-1 rounded text-sm">Hozzáadás</button>
+                          <button type="button" onClick={() => setShowCarModelForm(false)} className="bg-gray-500 text-white px-3 py-1 rounded text-sm">Mégsem</button>
+                        </div>
+                      </form>
+                    )}
+
+                    {selectedMakeForModel ? (
+                      <div className="max-h-64 overflow-y-auto space-y-2">
+                        {carModels.map(model => (
+                          <div key={model.id} className="p-3 bg-gray-50 rounded">
+                            <div className="font-medium">{model.name}</div>
+                            {model.engine_codes.length > 0 && (
+                              <div className="text-xs text-gray-600">
+                                Motorok: {model.engine_codes.join(', ')}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-gray-500 text-center py-8">
+                        Válassz egy márkát a modellek megtekintéséhez
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Warnings Tab */}
+            {activeTab === 'warnings' && (
+              <div>
+                <h3 className="text-lg font-semibold mb-4">🚨 Figyelmeztetési rendszer</h3>
+                <p className="text-gray-600 mb-6">Itt hozhatsz létre figyelmeztetéseket turbó kódokhoz és autó típusokhoz. Ezek piros felkiáltójellel jelennek meg a munkalapokban.</p>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Turbo Notes */}
+                  <div className="bg-orange-50 p-6 rounded-lg">
+                    <div className="flex justify-between items-center mb-4">
+                      <h4 className="font-semibold text-orange-800">⚠️ Turbó figyelmeztetések</h4>
+                      <button
+                        onClick={() => setShowTurboNoteForm(true)}
+                        className="bg-orange-500 text-white px-3 py-1 rounded text-sm hover:bg-orange-600"
+                      >
+                        ➕ Új
+                      </button>
+                    </div>
+
+                    {showTurboNoteForm && (
+                      <form onSubmit={handleAddTurboNote} className="mb-4 p-4 bg-white rounded space-y-2">
+                        <input
+                          type="text"
+                          placeholder="Turbó kód (pl. 5490-970-0071)"
+                          value={turboNoteForm.turbo_code}
+                          onChange={(e) => setTurboNoteForm({...turboNoteForm, turbo_code: e.target.value})}
+                          className="w-full p-2 border border-gray-300 rounded font-mono"
+                          required
+                        />
+                        <select
+                          value={turboNoteForm.note_type}
+                          onChange={(e) => setTurboNoteForm({...turboNoteForm, note_type: e.target.value})}
+                          className="w-full p-2 border border-gray-300 rounded"
+                        >
+                          <option value="INFO">🔵 INFO</option>
+                          <option value="WARNING">🟡 WARNING</option>
+                          <option value="CRITICAL">🔴 CRITICAL</option>
+                        </select>
+                        <input
+                          type="text"
+                          placeholder="Cím (pl. Gyakori hiba)"
+                          value={turboNoteForm.title}
+                          onChange={(e) => setTurboNoteForm({...turboNoteForm, title: e.target.value})}
+                          className="w-full p-2 border border-gray-300 rounded"
+                          required
+                        />
+                        <textarea
+                          placeholder="Részletes leírás..."
+                          value={turboNoteForm.description}
+                          onChange={(e) => setTurboNoteForm({...turboNoteForm, description: e.target.value})}
+                          className="w-full p-2 border border-gray-300 rounded"
+                          rows="3"
+                          required
+                        />
+                        <div className="flex gap-2">
+                          <button type="submit" className="bg-orange-500 text-white px-3 py-1 rounded text-sm">Hozzáadás</button>
+                          <button type="button" onClick={() => setShowTurboNoteForm(false)} className="bg-gray-500 text-white px-3 py-1 rounded text-sm">Mégsem</button>
+                        </div>
+                      </form>
+                    )}
+
+                    <div className="text-center text-gray-500 py-4">
+                      Turbó figyelmeztetések (fejlesztés alatt...)
+                    </div>
+                  </div>
+
+                  {/* Car Notes */}
+                  <div className="bg-red-50 p-6 rounded-lg">
+                    <div className="flex justify-between items-center mb-4">
+                      <h4 className="font-semibold text-red-800">🚗 Autó figyelmeztetések</h4>
+                      <button
+                        onClick={() => setShowCarNoteForm(true)}
+                        className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
+                      >
+                        ➕ Új
+                      </button>
+                    </div>
+
+                    {showCarNoteForm && (
+                      <form onSubmit={handleAddCarNote} className="mb-4 p-4 bg-white rounded space-y-2">
+                        <input
+                          type="text"
+                          placeholder="Autó márka (pl. BMW)"
+                          value={carNoteForm.car_make}
+                          onChange={(e) => setCarNoteForm({...carNoteForm, car_make: e.target.value})}
+                          className="w-full p-2 border border-gray-300 rounded"
+                          required
+                        />
+                        <input
+                          type="text"
+                          placeholder="Autó modell (pl. X5)"
+                          value={carNoteForm.car_model}
+                          onChange={(e) => setCarNoteForm({...carNoteForm, car_model: e.target.value})}
+                          className="w-full p-2 border border-gray-300 rounded"
+                          required
+                        />
+                        <select
+                          value={carNoteForm.note_type}
+                          onChange={(e) => setCarNoteForm({...carNoteForm, note_type: e.target.value})}
+                          className="w-full p-2 border border-gray-300 rounded"
+                        >
+                          <option value="INFO">🔵 INFO</option>
+                          <option value="WARNING">🟡 WARNING</option>
+                          <option value="CRITICAL">🔴 CRITICAL</option>
+                        </select>
+                        <input
+                          type="text"
+                          placeholder="Cím (pl. Gyakori probléma)"
+                          value={carNoteForm.title}
+                          onChange={(e) => setCarNoteForm({...carNoteForm, title: e.target.value})}
+                          className="w-full p-2 border border-gray-300 rounded"
+                          required
+                        />
+                        <textarea
+                          placeholder="Részletes leírás..."
+                          value={carNoteForm.description}
+                          onChange={(e) => setCarNoteForm({...carNoteForm, description: e.target.value})}
+                          className="w-full p-2 border border-gray-300 rounded"
+                          rows="3"
+                          required
+                        />
+                        <div className="flex gap-2">
+                          <button type="submit" className="bg-red-500 text-white px-3 py-1 rounded text-sm">Hozzáadás</button>
+                          <button type="button" onClick={() => setShowCarNoteForm(false)} className="bg-gray-500 text-white px-3 py-1 rounded text-sm">Mégsem</button>
+                        </div>
+                      </form>
+                    )}
+
+                    <div className="text-center text-gray-500 py-4">
+                      Autó figyelmeztetések (fejlesztés alatt...)
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Parts & Work Processes Tab */}
+            {activeTab === 'parts' && (
+              <div>
+                <h3 className="text-lg font-semibold mb-4">🔧 Alkatrészek és munkafolyamatok</h3>
+                
+                <div className="grid grid-cols-1 gap-6">
+                  <div className="bg-blue-50 p-6 rounded-lg">
+                    <h4 className="font-semibold text-blue-800 mb-4">⚙️ Munkafolyamatok ({workProcesses.length})</h4>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {workProcesses.map(process => (
+                        <div key={process.id} className="flex justify-between items-center p-3 bg-white rounded">
+                          <div>
+                            <div className="font-medium">{process.name}</div>
+                            <div className="text-sm text-gray-600">{process.category} • {process.estimated_time} perc • {process.base_price} LEI</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="bg-purple-50 p-6 rounded-lg">
+                    <h4 className="font-semibold text-purple-800 mb-4">🔧 Turbó alkatrészek ({turboParts.length})</h4>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {turboParts.map(part => (
+                        <div key={part.id} className="flex justify-between items-center p-3 bg-white rounded">
+                          <div>
+                            <div className="font-mono font-medium">{part.part_code}</div>
+                            <div className="text-sm text-gray-600">{part.category} • {part.supplier} • {part.price} LEI</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 text-center">
+                  <Link to="/parts" className="bg-blue-500 text-white px-6 py-3 rounded hover:bg-blue-600 font-medium">
+                    📝 Részletes szerkesztés →
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
   const [workOrders, setWorkOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [loading, setLoading] = useState(true);
