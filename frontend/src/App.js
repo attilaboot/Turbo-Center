@@ -608,8 +608,11 @@ const Settings = () => {
   // Configuration save function
   const handleConfigSave = () => {
     saveAppConfig(config);
-    alert('Beállítások mentve! Az oldal újratöltése szükséges a változások megjelenítéséhez.');
-    window.location.reload();
+    alert('Beállítások mentve! Az oldal automatikusan frissül...');
+    // Force immediate update and navigate back
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 1000);
   };
 
   // Logo upload handler
