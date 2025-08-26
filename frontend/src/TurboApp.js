@@ -162,7 +162,7 @@ const Dashboard = () => {
               to="/settings" 
               className="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 font-medium flex items-center gap-2"
             >
-              ⚙️ {config.labels.settings}
+              ⚙️ SETTINGS
             </Link>
           </div>
         </header>
