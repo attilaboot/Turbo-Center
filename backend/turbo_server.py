@@ -305,24 +305,6 @@ async def get_vehicles(client_id: Optional[str] = None):
     return [Vehicle(**vehicle) for vehicle in vehicles]
 
 
-# Turbo Parts endpoints
-@api_router.post("/turbo-parts", response_model=TurboPart)
-async def create_turbo_part(part: TurboPartCreate):
-    # Check if part code already exists
-    existing = await db.turbo_parts.find_one({"part_code": part.part_code})
-    if existing:
-        raise HTTPException(status_code=400, detail="Ez az alkatrész kód már létezik")
-    
-    part_obj = TurboPart(**part.dict())
-    await db.turbo_parts.insert_one(part_obj.dict())
-    return part_obj
-
-@api_router.get("/turbo-parts", response_model=List[TurboPart])
-async def get_turbo_parts(category: Optional[str] = None):
-    query = {"category": category} if category else {}
-    parts = await db.turbo_parts.find(query).sort("category", 1).to_list(1000)
-    return [TurboPart(**part) for part in parts]
-
 
 # Work Orders endpoints
 @api_router.post("/work-orders", response_model=WorkOrder)
