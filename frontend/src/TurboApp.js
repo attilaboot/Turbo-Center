@@ -137,12 +137,34 @@ const Dashboard = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <header className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            🔧 Turbó Szerviz Kezelő
-          </h1>
-          <p className="text-gray-600">
-            Teljes körű turbófeltöltő javítás kezelése
-          </p>
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              {config.logoUrl && (
+                <img 
+                  src={config.logoUrl} 
+                  alt="Logo" 
+                  className="h-16 w-16 object-contain rounded-lg shadow-md"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+              )}
+              <div>
+                <h1 className="text-4xl font-bold text-gray-800 mb-2">
+                  🔧 {config.appName}
+                </h1>
+                <p className="text-gray-600">
+                  Teljes körű turbófeltöltő javítás kezelése
+                </p>
+              </div>
+            </div>
+            <Link 
+              to="/settings" 
+              className="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 font-medium flex items-center gap-2"
+            >
+              ⚙️ {config.labels.settings}
+            </Link>
+          </div>
         </header>
 
         {/* Navigation */}
