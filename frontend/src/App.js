@@ -1081,7 +1081,7 @@ const Settings = () => {
                     <p><strong>App név:</strong> {config.appName}</p>
                     <p><strong>Főoldal leírás:</strong> {config.labels.parts} és raktárkészlet kezelése</p>
                     <p><strong>Gomb:</strong> ➕ {config.labels.newPart}</p>
-                    <p><strong>Táblázat oszlopok:</strong> {config.labels.name}, {config.labels.code}, {config.labels.type}, {config.labels.supplier}, {config.labels.stock}</p>
+                    <p><strong>Táblázat oszlopok:</strong> {config.labels.code}, {config.labels.type}, {config.labels.supplier}, {config.labels.notes}, {config.labels.stock}</p>
                   </div>
                 </div>
               </div>
