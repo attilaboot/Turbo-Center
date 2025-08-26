@@ -430,34 +430,6 @@ async def update_work_order(work_order_id: str, work_order_update: WorkOrderUpda
     return WorkOrder(**updated)
 
 
-# Initialize default turbo parts
-@api_router.post("/initialize-turbo-parts")
-async def initialize_turbo_parts():
-    default_parts = [
-        # C.H.R.A parts
-        {"category": "C.H.R.A", "part_code": "1303-090-400", "supplier": "Melett", "price": 450.0},
-        {"category": "C.H.R.A", "part_code": "1303-090-401", "supplier": "Vallion", "price": 420.0},
-        
-        # GEO parts
-        {"category": "GEO", "part_code": "5306-016-071-0001", "supplier": "Melett", "price": 85.0},
-        {"category": "GEO", "part_code": "5306-016-072-0001", "supplier": "Vallion", "price": 80.0},
-        
-        # ACT parts
-        {"category": "ACT", "part_code": "2061-016-006", "supplier": "Melett", "price": 120.0},
-        {"category": "ACT", "part_code": "2061-016-007", "supplier": "Vallion", "price": 115.0},
-        
-        # SET GAR parts
-        {"category": "SET.GAR", "part_code": "K7-110690", "supplier": "Melett", "price": 25.0},
-        {"category": "SET.GAR", "part_code": "K7-110691", "supplier": "Vallion", "price": 22.0},
-    ]
-    
-    for part_data in default_parts:
-        existing = await db.turbo_parts.find_one({"part_code": part_data["part_code"]})
-        if not existing:
-            part_obj = TurboPart(**part_data)
-            await db.turbo_parts.insert_one(part_obj.dict())
-    
-    return {"message": "Turbó alkatrészek inicializálva"}
 
 
 # Include router
