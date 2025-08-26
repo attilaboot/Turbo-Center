@@ -153,7 +153,7 @@ const PartsTable = ({ parts, onStockMovement, onEdit, onDelete, config }) => {
   );
 };
 
-const StockMovementModal = ({ partId, partName, movementType, onClose, onSubmit, config }) => {
+const StockMovementModal = ({ partId, partName, partCode, movementType, onClose, onSubmit, config }) => {
   const [quantity, setQuantity] = useState(1);
 
   const handleSubmit = (e) => {
@@ -173,7 +173,7 @@ const StockMovementModal = ({ partId, partName, movementType, onClose, onSubmit,
           Készletmozgás - {movementType === 'IN' ? config.labels.stockIn : config.labels.stockOut}
         </h3>
         <p className="text-gray-600 mb-4">
-          <strong>Alkatrész:</strong> {partName}
+          <strong>Alkatrész kód:</strong> {partCode}
         </p>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
