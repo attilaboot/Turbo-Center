@@ -96,21 +96,42 @@ class VehicleCreate(BaseModel):
     engine_code: Optional[str] = ""
 
 
-class TurboPart(BaseModel):
+class TurboNote(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    category: str                   # C.H.R.A, GEO, ACT, SET.GAR
-    part_code: str                  # 1303-090-400
-    supplier: str                   # Melett, Vallion, etc.
-    price: float = 0.0
-    in_stock: bool = True
+    turbo_code: str                 # Turbó kód amire vonatkozik
+    note_type: str                  # "WARNING", "INFO", "CRITICAL"
+    title: str                      # Megjegyzés címe
+    description: str                # Részletes leírás
+    created_by: str = "System"      # Ki hozta létre
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    active: bool = True
 
-class TurboPartCreate(BaseModel):
-    category: str
-    part_code: str
-    supplier: str
-    price: float = 0.0
-    in_stock: bool = True
+class TurboNoteCreate(BaseModel):
+    turbo_code: str
+    note_type: str = "INFO"
+    title: str
+    description: str
+
+
+class CarNote(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    car_make: str                   # Gyártmány (pl. BMW, Audi)
+    car_model: str                  # Model (pl. X5, A4)
+    engine_code: Optional[str] = "" # Motorkód (opcionális)
+    note_type: str                  # "WARNING", "INFO", "CRITICAL"
+    title: str                      # Megjegyzés címe
+    description: str                # Részletes leírás
+    created_by: str = "System"      # Ki hozta létre
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    active: bool = True
+
+class CarNoteCreate(BaseModel):
+    car_make: str
+    car_model: str
+    engine_code: Optional[str] = ""
+    note_type: str = "INFO"
+    title: str
+    description: str
 
 
 class WorkProcess(BaseModel):
