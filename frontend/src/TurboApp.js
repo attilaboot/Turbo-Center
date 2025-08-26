@@ -1376,29 +1376,16 @@ const NewWorkOrder = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Rendszám
+                      Motorkód
                     </label>
                     <input
                       type="text"
-                      placeholder="pl. ABC123"
-                      value={workOrderData.license_plate}
-                      onChange={(e) => setWorkOrderData({...workOrderData, license_plate: e.target.value.toUpperCase()})}
+                      placeholder="pl. N47D20"
+                      value={workOrderData.engine_code}
+                      onChange={(e) => setWorkOrderData({...workOrderData, engine_code: e.target.value})}
                       className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 font-mono"
                     />
                   </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Motorkód
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="pl. N47D20"
-                    value={workOrderData.engine_code}
-                    onChange={(e) => setWorkOrderData({...workOrderData, engine_code: e.target.value})}
-                    className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 font-mono"
-                  />
                 </div>
 
                 <div>
