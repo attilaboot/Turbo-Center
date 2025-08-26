@@ -50,7 +50,7 @@ const SearchBar = ({ onSearch, searchTerm, setSearchTerm, config }) => {
       <div className="relative">
         <input
           type="text"
-          placeholder={`${config.labels.search} ${config.labels.parts.toLowerCase()} ${config.labels.name.toLowerCase()}, ${config.labels.code.toLowerCase()}, ${config.labels.type.toLowerCase()} vagy ${config.labels.supplier.toLowerCase()} szerint...`}
+          placeholder={`${config.labels.search} ${config.labels.parts.toLowerCase()} ${config.labels.code.toLowerCase()}, ${config.labels.type.toLowerCase()}, ${config.labels.supplier.toLowerCase()} vagy ${config.labels.notes.toLowerCase()} szerint...`}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
