@@ -42,8 +42,77 @@ class DocumentType(str, Enum):
     FACT = "FACT"
     BON_F = "BON_F"
 
+class NoteType(str, Enum):
+    INFO = "INFO"
+    WARNING = "WARNING"
+    CRITICAL = "CRITICAL"
 
-# Models
+
+# Car Database Models
+class CarMake(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str                       # BMW, Audi, Mercedes
+    logo_url: Optional[str] = ""
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class CarMakeCreate(BaseModel):
+    name: str
+    logo_url: Optional[str] = ""
+
+class CarModel(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    make_id: str                    # Hivatkozás CarMake-re
+    name: str                       # X5, A4, C-Class
+    engine_codes: List[str] = []    # Lehetséges motorkódok
+    common_turbos: List[str] = []   # Gyakori turbó kódok ehhez a modellhez
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class CarModelCreate(BaseModel):
+    make_id: str
+    name: str
+    engine_codes: List[str] = []
+    common_turbos: List[str] = []
+
+
+# Notes Models
+class TurboNote(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    turbo_code: str                 # Turbó kód amire vonatkozik
+    note_type: NoteType = NoteType.INFO
+    title: str                      # Megjegyzés címe
+    description: str                # Részletes leírás
+    created_by: str = "System"
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    active: bool = True
+
+class TurboNoteCreate(BaseModel):
+    turbo_code: str
+    note_type: NoteType = NoteType.INFO
+    title: str
+    description: str
+
+class CarNote(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    car_make: str                   # BMW, Audi
+    car_model: str                  # X5, A4
+    engine_code: Optional[str] = ""
+    note_type: NoteType = NoteType.INFO
+    title: str
+    description: str
+    created_by: str = "System"
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    active: bool = True
+
+class CarNoteCreate(BaseModel):
+    car_make: str
+    car_model: str
+    engine_code: Optional[str] = ""
+    note_type: NoteType = NoteType.INFO
+    title: str
+    description: str
+
+
+# Client Models
 class Client(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
@@ -75,15 +144,68 @@ class ClientUpdate(BaseModel):
     notes: Optional[str] = None
 
 
+# Work Process Models
+class WorkProcess(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str                       # pl. "Szétszerelés", "Tisztítás"
+    category: str                   # pl. "Diagnosis", "Cleaning"
+    estimated_time: int = 0         # perc
+    base_price: float = 0.0         # LEI
+    active: bool = True
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class WorkProcessCreate(BaseModel):
+    name: str
+    category: str
+    estimated_time: int = 0
+    base_price: float = 0.0
+
+class WorkOrderProcess(BaseModel):
+    process_id: str
+    process_name: str
+    category: str
+    estimated_time: int
+    price: float
+    selected: bool = False
+    notes: str = ""
+
+
+# Turbo Parts Models
+class TurboPart(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    category: str                   # C.H.R.A, GEO, ACT, SET.GAR
+    part_code: str
+    supplier: str
+    price: float = 0.0
+    in_stock: bool = True
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class TurboPartCreate(BaseModel):
+    category: str
+    part_code: str
+    supplier: str
+    price: float = 0.0
+    in_stock: bool = True
+
+class WorkOrderPart(BaseModel):
+    part_id: str
+    part_code: str
+    category: str
+    supplier: str
+    price: float
+    selected: bool = False
+
+
+# Vehicle Models
 class Vehicle(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     client_id: str
-    make: Optional[str] = ""        # Gyártmány
-    model: Optional[str] = ""       # Típus
-    year: Optional[int] = None      # Évjárat
-    license_plate: Optional[str] = "" # Rendszám
-    vin: Optional[str] = ""         # Alvázszám
-    engine_code: Optional[str] = "" # Motorkód
+    make: Optional[str] = ""
+    model: Optional[str] = ""
+    year: Optional[int] = None
+    license_plate: Optional[str] = ""
+    vin: Optional[str] = ""
+    engine_code: Optional[str] = ""
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class VehicleCreate(BaseModel):
@@ -96,69 +218,7 @@ class VehicleCreate(BaseModel):
     engine_code: Optional[str] = ""
 
 
-class TurboNote(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    turbo_code: str                 # Turbó kód amire vonatkozik
-    note_type: str                  # "WARNING", "INFO", "CRITICAL"
-    title: str                      # Megjegyzés címe
-    description: str                # Részletes leírás
-    created_by: str = "System"      # Ki hozta létre
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    active: bool = True
-
-class TurboNoteCreate(BaseModel):
-    turbo_code: str
-    note_type: str = "INFO"
-    title: str
-    description: str
-
-
-class CarNote(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    car_make: str                   # Gyártmány (pl. BMW, Audi)
-    car_model: str                  # Model (pl. X5, A4)
-    engine_code: Optional[str] = "" # Motorkód (opcionális)
-    note_type: str                  # "WARNING", "INFO", "CRITICAL"
-    title: str                      # Megjegyzés címe
-    description: str                # Részletes leírás
-    created_by: str = "System"      # Ki hozta létre
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    active: bool = True
-
-class CarNoteCreate(BaseModel):
-    car_make: str
-    car_model: str
-    engine_code: Optional[str] = ""
-    note_type: str = "INFO"
-    title: str
-    description: str
-
-
-class WorkProcess(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    name: str                       # pl. "Szétszerelés", "Tisztítás", "Diagnosztika"
-    category: str                   # pl. "Diagnosis", "Cleaning", "Assembly"
-    estimated_time: int = 0         # becslés percekben
-    base_price: float = 0.0         # alapár
-    active: bool = True
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-
-class WorkProcessCreate(BaseModel):
-    name: str
-    category: str
-    estimated_time: int = 0
-    base_price: float = 0.0
-
-
-class WorkOrderProcess(BaseModel):
-    process_id: str
-    process_name: str
-    category: str
-    estimated_time: int
-    price: float
-    selected: bool = False
-    notes: str = ""
-
+# Work Order Models
 class WorkOrder(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     work_number: str                # NR (43005)
@@ -166,20 +226,28 @@ class WorkOrder(BaseModel):
     vehicle_id: Optional[str] = None
     turbo_code: str                 # 5490-970-0071
     
+    # Car details (stored directly in work order)
+    car_make: str = ""
+    car_model: str = ""
+    car_year: Optional[int] = None
+    engine_code: Optional[str] = ""
+    general_notes: str = ""
+    
     # Received date
     received_date: date = Field(default_factory=date.today)
     
-    # Parts selection
-    parts: List[WorkOrderProcess] = []
+    # Parts and processes selection
+    parts: List[WorkOrderPart] = []
+    processes: List[WorkOrderProcess] = []
     
     # Status checkboxes
     status_passed: bool = False     # OK (PASSED)
     status_refused: bool = False    # REFUZAT
     
     # Prices
-    cleaning_price: float = 0.0     # Curatat
-    reconditioning_price: float = 0.0 # Recond
-    turbo_price: float = 0.0        # Turbo
+    cleaning_price: float = 170.0   # Curatat
+    reconditioning_price: float = 170.0 # Recond
+    turbo_price: float = 240.0      # Turbo
     
     # Workflow
     status: WorkStatus = WorkStatus.RECEIVED
@@ -198,12 +266,22 @@ class WorkOrder(BaseModel):
 
 class WorkOrderCreate(BaseModel):
     client_id: str
-    vehicle_id: Optional[str] = None
     turbo_code: str
+    car_make: str = ""
+    car_model: str = ""
+    car_year: Optional[int] = None
+    engine_code: Optional[str] = ""
+    general_notes: str = ""
 
 class WorkOrderUpdate(BaseModel):
     turbo_code: Optional[str] = None
-    parts: Optional[List[WorkOrderProcess]] = None
+    car_make: Optional[str] = None
+    car_model: Optional[str] = None
+    car_year: Optional[int] = None
+    engine_code: Optional[str] = None
+    general_notes: Optional[str] = None
+    parts: Optional[List[WorkOrderPart]] = None
+    processes: Optional[List[WorkOrderProcess]] = None
     status_passed: Optional[bool] = None
     status_refused: Optional[bool] = None
     cleaning_price: Optional[float] = None
@@ -222,12 +300,14 @@ class WorkOrderWithDetails(BaseModel):
     work_number: str
     client_name: str
     client_phone: str
-    vehicle_info: str
+    car_info: str
     turbo_code: str
     received_date: date
     status: WorkStatus
     total_amount: float
     estimated_completion: Optional[date]
+    has_turbo_warning: bool = False
+    has_car_warning: bool = False
     created_at: datetime
 
 
@@ -255,6 +335,136 @@ async def generate_work_number() -> str:
 @api_router.get("/")
 async def root():
     return {"message": "Turbó Szerviz Kezelő API működik"}
+
+
+# Car Makes endpoints
+@api_router.post("/car-makes", response_model=CarMake)
+async def create_car_make(car_make: CarMakeCreate):
+    existing = await db.car_makes.find_one({"name": car_make.name})
+    if existing:
+        raise HTTPException(status_code=400, detail="Ez az autó márka már létezik")
+    
+    car_make_obj = CarMake(**car_make.dict())
+    await db.car_makes.insert_one(car_make_obj.dict())
+    return car_make_obj
+
+@api_router.get("/car-makes", response_model=List[CarMake])
+async def get_car_makes():
+    makes = await db.car_makes.find().sort("name", 1).to_list(1000)
+    return [CarMake(**make) for make in makes]
+
+@api_router.get("/car-models/{make_id}", response_model=List[CarModel])
+async def get_car_models(make_id: str):
+    models = await db.car_models.find({"make_id": make_id}).sort("name", 1).to_list(1000)
+    return [CarModel(**model) for model in models]
+
+@api_router.post("/car-models", response_model=CarModel)
+async def create_car_model(car_model: CarModelCreate):
+    existing = await db.car_models.find_one({"make_id": car_model.make_id, "name": car_model.name})
+    if existing:
+        raise HTTPException(status_code=400, detail="Ez a modell már létezik ehhez a márkához")
+    
+    car_model_obj = CarModel(**car_model.dict())
+    await db.car_models.insert_one(car_model_obj.dict())
+    return car_model_obj
+
+
+# Notes endpoints
+@api_router.post("/turbo-notes", response_model=TurboNote)
+async def create_turbo_note(note: TurboNoteCreate):
+    note_obj = TurboNote(**note.dict())
+    await db.turbo_notes.insert_one(note_obj.dict())
+    return note_obj
+
+@api_router.get("/turbo-notes/{turbo_code}", response_model=List[TurboNote])
+async def get_turbo_notes(turbo_code: str):
+    notes = await db.turbo_notes.find({"turbo_code": turbo_code, "active": True}).to_list(1000)
+    return [TurboNote(**note) for note in notes]
+
+@api_router.post("/car-notes", response_model=CarNote)
+async def create_car_note(note: CarNoteCreate):
+    note_obj = CarNote(**note.dict())
+    await db.car_notes.insert_one(note_obj.dict())
+    return note_obj
+
+@api_router.get("/car-notes/{car_make}/{car_model}", response_model=List[CarNote])
+async def get_car_notes(car_make: str, car_model: str):
+    notes = await db.car_notes.find({
+        "car_make": car_make, 
+        "car_model": car_model, 
+        "active": True
+    }).to_list(1000)
+    return [CarNote(**note) for note in notes]
+
+
+# Work Process endpoints
+@api_router.post("/work-processes", response_model=WorkProcess)
+async def create_work_process(process: WorkProcessCreate):
+    process_obj = WorkProcess(**process.dict())
+    await db.work_processes.insert_one(process_obj.dict())
+    return process_obj
+
+@api_router.get("/work-processes", response_model=List[WorkProcess])
+async def get_work_processes():
+    processes = await db.work_processes.find({"active": True}).sort("category", 1).to_list(1000)
+    return [WorkProcess(**process) for process in processes]
+
+@api_router.put("/work-processes/{process_id}", response_model=WorkProcess)
+async def update_work_process(process_id: str, process_update: WorkProcessCreate):
+    await db.work_processes.update_one(
+        {"id": process_id}, 
+        {"$set": process_update.dict()}
+    )
+    updated = await db.work_processes.find_one({"id": process_id})
+    if not updated:
+        raise HTTPException(status_code=404, detail="Munkafolyamat nem található")
+    return WorkProcess(**updated)
+
+@api_router.delete("/work-processes/{process_id}")
+async def delete_work_process(process_id: str):
+    result = await db.work_processes.update_one(
+        {"id": process_id}, 
+        {"$set": {"active": False}}
+    )
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Munkafolyamat nem található")
+    return {"message": "Munkafolyamat törölve"}
+
+
+# Turbo Parts endpoints
+@api_router.post("/turbo-parts", response_model=TurboPart)
+async def create_turbo_part(part: TurboPartCreate):
+    existing = await db.turbo_parts.find_one({"part_code": part.part_code})
+    if existing:
+        raise HTTPException(status_code=400, detail="Ez az alkatrész kód már létezik")
+    
+    part_obj = TurboPart(**part.dict())
+    await db.turbo_parts.insert_one(part_obj.dict())
+    return part_obj
+
+@api_router.get("/turbo-parts", response_model=List[TurboPart])
+async def get_turbo_parts(category: Optional[str] = None):
+    query = {"category": category} if category else {}
+    parts = await db.turbo_parts.find(query).sort("category", 1).to_list(1000)
+    return [TurboPart(**part) for part in parts]
+
+@api_router.put("/turbo-parts/{part_id}", response_model=TurboPart)
+async def update_turbo_part(part_id: str, part_update: TurboPartCreate):
+    await db.turbo_parts.update_one(
+        {"id": part_id}, 
+        {"$set": part_update.dict()}
+    )
+    updated = await db.turbo_parts.find_one({"id": part_id})
+    if not updated:
+        raise HTTPException(status_code=404, detail="Alkatrész nem található")
+    return TurboPart(**updated)
+
+@api_router.delete("/turbo-parts/{part_id}")
+async def delete_turbo_part(part_id: str):
+    result = await db.turbo_parts.delete_one({"id": part_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Alkatrész nem található")
+    return {"message": "Alkatrész törölve"}
 
 
 # Clients endpoints
@@ -310,7 +520,6 @@ async def update_client(client_id: str, client_update: ClientUpdate):
 # Vehicles endpoints
 @api_router.post("/vehicles", response_model=Vehicle)
 async def create_vehicle(vehicle: VehicleCreate):
-    # Check if client exists
     client = await db.clients.find_one({"id": vehicle.client_id})
     if not client:
         raise HTTPException(status_code=400, detail="Ügyfél nem található")
@@ -326,16 +535,13 @@ async def get_vehicles(client_id: Optional[str] = None):
     return [Vehicle(**vehicle) for vehicle in vehicles]
 
 
-
 # Work Orders endpoints
 @api_router.post("/work-orders", response_model=WorkOrder)
 async def create_work_order(work_order: WorkOrderCreate):
-    # Check if client exists
     client = await db.clients.find_one({"id": work_order.client_id})
     if not client:
         raise HTTPException(status_code=400, detail="Ügyfél nem található")
     
-    # Generate work number
     work_number = await generate_work_number()
     
     work_order_obj = WorkOrder(
@@ -360,29 +566,24 @@ async def get_work_orders(
                 "as": "client"
             }
         },
-        {
-            "$lookup": {
-                "from": "vehicles",
-                "localField": "vehicle_id", 
-                "foreignField": "id",
-                "as": "vehicle"
-            }
-        },
         {"$unwind": "$client"},
         {
             "$addFields": {
-                "vehicle_info": {
-                    "$cond": {
-                        "if": {"$gt": [{"$size": "$vehicle"}, 0]},
-                        "then": {
-                            "$concat": [
-                                {"$arrayElemAt": ["$vehicle.make", 0]},
-                                " ",
-                                {"$arrayElemAt": ["$vehicle.model", 0]}
-                            ]
-                        },
-                        "else": ""
-                    }
+                "car_info": {
+                    "$concat": [
+                        "$car_make",
+                        " ",
+                        "$car_model",
+                        {
+                            "$cond": {
+                                "if": {"$ne": ["$car_year", None]},
+                                "then": {
+                                    "$concat": [" (", {"$toString": "$car_year"}, ")"]
+                                },
+                                "else": ""
+                            }
+                        }
+                    ]
                 },
                 "total_amount": {
                     "$add": ["$cleaning_price", "$reconditioning_price", "$turbo_price"]
@@ -390,6 +591,43 @@ async def get_work_orders(
             }
         }
     ]
+    
+    # Check for warnings
+    pipeline.append({
+        "$lookup": {
+            "from": "turbo_notes",
+            "localField": "turbo_code",
+            "foreignField": "turbo_code",
+            "as": "turbo_warnings"
+        }
+    })
+    
+    pipeline.append({
+        "$lookup": {
+            "from": "car_notes",
+            "let": {"make": "$car_make", "model": "$car_model"},
+            "pipeline": [
+                {
+                    "$match": {
+                        "$expr": {
+                            "$and": [
+                                {"$eq": ["$car_make", "$$make"]},
+                                {"$eq": ["$car_model", "$$model"]}
+                            ]
+                        }
+                    }
+                }
+            ],
+            "as": "car_warnings"
+        }
+    })
+    
+    pipeline.append({
+        "$addFields": {
+            "has_turbo_warning": {"$gt": [{"$size": "$turbo_warnings"}, 0]},
+            "has_car_warning": {"$gt": [{"$size": "$car_warnings"}, 0]}
+        }
+    })
     
     # Add filters
     match_conditions = {}
@@ -401,7 +639,9 @@ async def get_work_orders(
         match_conditions["$or"] = [
             {"work_number": {"$regex": search, "$options": "i"}},
             {"turbo_code": {"$regex": search, "$options": "i"}},
-            {"client.name": {"$regex": search, "$options": "i"}}
+            {"client.name": {"$regex": search, "$options": "i"}},
+            {"car_make": {"$regex": search, "$options": "i"}},
+            {"car_model": {"$regex": search, "$options": "i"}}
         ]
     
     if match_conditions:
@@ -418,12 +658,14 @@ async def get_work_orders(
             work_number=wo["work_number"],
             client_name=wo["client"]["name"],
             client_phone=wo["client"]["phone"],
-            vehicle_info=wo.get("vehicle_info", ""),
+            car_info=wo.get("car_info", "").strip(),
             turbo_code=wo["turbo_code"],
             received_date=wo["received_date"],
             status=wo["status"],
             total_amount=wo["total_amount"],
             estimated_completion=wo.get("estimated_completion"),
+            has_turbo_warning=wo.get("has_turbo_warning", False),
+            has_car_warning=wo.get("has_car_warning", False),
             created_at=wo["created_at"]
         ))
     
@@ -451,6 +693,56 @@ async def update_work_order(work_order_id: str, work_order_update: WorkOrderUpda
     return WorkOrder(**updated)
 
 
+# Initialize default data
+@api_router.post("/initialize-data")
+async def initialize_data():
+    # Initialize car makes
+    car_makes = [
+        "BMW", "Audi", "Mercedes-Benz", "Volkswagen", "Ford", 
+        "Peugeot", "Renault", "Opel", "Citroen", "Skoda"
+    ]
+    
+    for make_name in car_makes:
+        existing = await db.car_makes.find_one({"name": make_name})
+        if not existing:
+            make_obj = CarMake(name=make_name)
+            await db.car_makes.insert_one(make_obj.dict())
+    
+    # Initialize work processes
+    default_processes = [
+        {"name": "Szétszerelés", "category": "Disassembly", "estimated_time": 60, "base_price": 80.0},
+        {"name": "Tisztítás", "category": "Cleaning", "estimated_time": 90, "base_price": 120.0},
+        {"name": "Diagnosztika", "category": "Diagnosis", "estimated_time": 45, "base_price": 60.0},
+        {"name": "Alkatrész csere", "category": "Repair", "estimated_time": 120, "base_price": 150.0},
+        {"name": "Összeszerelés", "category": "Assembly", "estimated_time": 90, "base_price": 100.0},
+        {"name": "Tesztelés", "category": "Testing", "estimated_time": 30, "base_price": 40.0},
+    ]
+    
+    for process_data in default_processes:
+        existing = await db.work_processes.find_one({"name": process_data["name"]})
+        if not existing:
+            process_obj = WorkProcess(**process_data)
+            await db.work_processes.insert_one(process_obj.dict())
+    
+    # Initialize turbo parts
+    default_parts = [
+        {"category": "C.H.R.A", "part_code": "1303-090-400", "supplier": "Melett", "price": 450.0},
+        {"category": "C.H.R.A", "part_code": "1303-090-401", "supplier": "Vallion", "price": 420.0},
+        {"category": "GEO", "part_code": "5306-016-071-0001", "supplier": "Melett", "price": 85.0},
+        {"category": "GEO", "part_code": "5306-016-072-0001", "supplier": "Vallion", "price": 80.0},
+        {"category": "ACT", "part_code": "2061-016-006", "supplier": "Melett", "price": 120.0},
+        {"category": "ACT", "part_code": "2061-016-007", "supplier": "Vallion", "price": 115.0},
+        {"category": "SET.GAR", "part_code": "K7-110690", "supplier": "Melett", "price": 25.0},
+        {"category": "SET.GAR", "part_code": "K7-110691", "supplier": "Vallion", "price": 22.0},
+    ]
+    
+    for part_data in default_parts:
+        existing = await db.turbo_parts.find_one({"part_code": part_data["part_code"]})
+        if not existing:
+            part_obj = TurboPart(**part_data)
+            await db.turbo_parts.insert_one(part_obj.dict())
+    
+    return {"message": "Alapadatok inicializálva"}
 
 
 # Include router
