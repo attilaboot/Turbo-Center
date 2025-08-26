@@ -6,14 +6,51 @@ import axios from "axios";
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
+// Application Configuration (ezt majd localStorage-ből töltjük)
+const getAppConfig = () => {
+  const savedConfig = localStorage.getItem('appConfig');
+  return savedConfig ? JSON.parse(savedConfig) : {
+    appName: "Turbófeltöltő Adatbázis",
+    logoUrl: "",
+    labels: {
+      parts: "Alkatrészek",
+      partTypes: "Alkatrésztípusok",
+      suppliers: "Beszállítók", 
+      stock: "Készlet",
+      search: "Keresés",
+      add: "Hozzáadás",
+      edit: "Szerkesztés",
+      delete: "Törlés",
+      settings: "Beállítások",
+      name: "Név",
+      code: "Kód",
+      type: "Típus",
+      supplier: "Beszállító",
+      quantity: "Mennyiség",
+      operations: "Műveletek",
+      stockIn: "Beraktározás",
+      stockOut: "Kiadás",
+      newPart: "Új alkatrész hozzáadása",
+      management: "kezelése",
+      backToMain: "Vissza a főoldalra",
+      cancel: "Mégsem",
+      save: "Mentés"
+    }
+  };
+};
+
+const saveAppConfig = (config) => {
+  localStorage.setItem('appConfig', JSON.stringify(config));
+};
+
 // Utility komponensek
-const SearchBar = ({ onSearch, searchTerm, setSearchTerm }) => {
+const SearchBar = ({ onSearch, searchTerm, setSearchTerm, config }) => {
   return (
     <div className="mb-6">
       <div className="relative">
         <input
           type="text"
-          placeholder="Keresés alkatrész név, kód, típus vagy beszállító szerint..."
+          placeholder={`${config.labels.search} ${config.labels.parts.toLowerCase()} ${config.labels.name.toLowerCase()}, ${config.labels.code.toLowerCase()}, ${config.labels.type.toLowerCase()} vagy ${config.labels.supplier.toLowerCase()} szerint...`}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
@@ -22,14 +59,14 @@ const SearchBar = ({ onSearch, searchTerm, setSearchTerm }) => {
           onClick={onSearch}
           className="absolute right-2 top-2 bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 font-medium"
         >
-          🔍 Keresés
+          🔍 {config.labels.search}
         </button>
       </div>
     </div>
   );
 };
 
-const PartsTable = ({ parts, onStockMovement, onEdit, onDelete }) => {
+const PartsTable = ({ parts, onStockMovement, onEdit, onDelete, config }) => {
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden">
       <div className="overflow-x-auto">
@@ -37,22 +74,22 @@ const PartsTable = ({ parts, onStockMovement, onEdit, onDelete }) => {
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Név
+                {config.labels.name}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Kód
+                {config.labels.code}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Típus
+                {config.labels.type}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Beszállító
+                {config.labels.supplier}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Készlet
+                {config.labels.stock}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Műveletek
+                {config.labels.operations}
               </th>
             </tr>
           </thead>
@@ -116,13 +153,13 @@ const PartsTable = ({ parts, onStockMovement, onEdit, onDelete }) => {
   );
 };
 
-const StockMovementModal = ({ partId, partName, movementType, onClose, onSubmit }) => {
+const StockMovementModal = ({ partId, partName, movementType, onClose, onSubmit, config }) => {
   const [quantity, setQuantity] = useState(1);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (quantity <= 0) {
-      alert("A mennyiségnek pozitív számnak kell lennie!");
+      alert(`A ${config.labels.quantity.toLowerCase()}nek pozitív számnak kell lennie!`);
       return;
     }
     onSubmit(partId, movementType, quantity);
@@ -133,7 +170,7 @@ const StockMovementModal = ({ partId, partName, movementType, onClose, onSubmit 
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
         <h3 className="text-lg font-semibold mb-4">
-          Készletmozgás - {movementType === 'IN' ? 'Beraktározás' : 'Kiadás'}
+          Készletmozgás - {movementType === 'IN' ? config.labels.stockIn : config.labels.stockOut}
         </h3>
         <p className="text-gray-600 mb-4">
           <strong>Alkatrész:</strong> {partName}
@@ -141,7 +178,7 @@ const StockMovementModal = ({ partId, partName, movementType, onClose, onSubmit 
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Mennyiség (db)
+              {config.labels.quantity} (db)
             </label>
             <input
               type="number"
@@ -159,14 +196,14 @@ const StockMovementModal = ({ partId, partName, movementType, onClose, onSubmit 
                 movementType === 'IN' ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'
               }`}
             >
-              {movementType === 'IN' ? '📥 Beraktározás' : '📤 Kiadás'}
+              {movementType === 'IN' ? `📥 ${config.labels.stockIn}` : `📤 ${config.labels.stockOut}`}
             </button>
             <button
               type="button"
               onClick={onClose}
               className="flex-1 bg-gray-500 text-white px-4 py-3 rounded hover:bg-gray-600 font-medium"
             >
-              Mégsem
+              {config.labels.cancel}
             </button>
           </div>
         </form>
@@ -175,7 +212,7 @@ const StockMovementModal = ({ partId, partName, movementType, onClose, onSubmit 
   );
 };
 
-const QuickAddForm = ({ partTypes, suppliers, onSubmit }) => {
+const QuickAddForm = ({ partTypes, suppliers, onSubmit, config }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -202,7 +239,7 @@ const QuickAddForm = ({ partTypes, suppliers, onSubmit }) => {
           onClick={() => setIsOpen(true)}
           className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 font-medium"
         >
-          ➕ Új alkatrész hozzáadása
+          ➕ {config.labels.newPart}
         </button>
       </div>
     );
@@ -210,11 +247,11 @@ const QuickAddForm = ({ partTypes, suppliers, onSubmit }) => {
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-      <h3 className="text-lg font-semibold mb-4">Új alkatrész hozzáadása</h3>
+      <h3 className="text-lg font-semibold mb-4">{config.labels.newPart}</h3>
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Alkatrész neve *
+            {config.labels.name} *
           </label>
           <input
             type="text"
@@ -227,7 +264,7 @@ const QuickAddForm = ({ partTypes, suppliers, onSubmit }) => {
         
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Kód *
+            {config.labels.code} *
           </label>
           <input
             type="text"
@@ -240,7 +277,7 @@ const QuickAddForm = ({ partTypes, suppliers, onSubmit }) => {
         
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Alkatrésztípus *
+            {config.labels.type} *
           </label>
           <select
             value={formData.part_type_id}
@@ -256,7 +293,7 @@ const QuickAddForm = ({ partTypes, suppliers, onSubmit }) => {
         
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Beszállító *
+            {config.labels.supplier} *
           </label>
           <select
             value={formData.supplier_id}
@@ -275,14 +312,14 @@ const QuickAddForm = ({ partTypes, suppliers, onSubmit }) => {
             type="submit"
             className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 flex items-center gap-2 font-medium"
           >
-            ✅ Hozzáadás
+            ✅ {config.labels.add}
           </button>
           <button
             type="button"
             onClick={() => setIsOpen(false)}
             className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 font-medium"
           >
-            Mégsem
+            {config.labels.cancel}
           </button>
         </div>
       </form>
@@ -299,6 +336,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [stockModal, setStockModal] = useState(null);
   const [editingPart, setEditingPart] = useState(null);
+  const [config, setConfig] = useState(getAppConfig());
 
   // Adatok betöltése
   const loadParts = async (search = '') => {
@@ -346,6 +384,10 @@ const Dashboard = () => {
       setLoading(false);
     };
     initialize();
+  }, []);
+
+  useEffect(() => {
+    setConfig(getAppConfig());
   }, []);
 
   // Keresés
@@ -416,19 +458,31 @@ const Dashboard = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <header className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-800 mb-2">
-              🔧 Turbófeltöltő Adatbázis
-            </h1>
-            <p className="text-gray-600">
-              Alkatrészek és raktárkészlet kezelése
-            </p>
+          <div className="flex items-center gap-4">
+            {config.logoUrl && (
+              <img 
+                src={config.logoUrl} 
+                alt="Logo" 
+                className="h-16 w-16 object-contain rounded-lg shadow-md"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+            )}
+            <div>
+              <h1 className="text-4xl font-bold text-gray-800 mb-2">
+                🔧 {config.appName}
+              </h1>
+              <p className="text-gray-600">
+                {config.labels.parts} és raktárkészlet kezelése
+              </p>
+            </div>
           </div>
           <Link
             to="/settings"
             className="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 font-medium flex items-center gap-2"
           >
-            ⚙️ Beállítások
+            ⚙️ {config.labels.settings}
           </Link>
         </header>
 
@@ -436,16 +490,18 @@ const Dashboard = () => {
           partTypes={partTypes}
           suppliers={suppliers}
           onSubmit={handlePartSubmit}
+          config={config}
         />
 
         <SearchBar
           onSearch={handleSearch}
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
+          config={config}
         />
 
         <div className="mb-4 text-sm text-gray-600">
-          Összesen: {parts.length} alkatrész
+          Összesen: {parts.length} {config.labels.parts.toLowerCase()}
         </div>
 
         <PartsTable
@@ -453,6 +509,7 @@ const Dashboard = () => {
           onStockMovement={handleStockMovement}
           onEdit={setEditingPart}
           onDelete={handlePartDelete}
+          config={config}
         />
 
         {stockModal && (
@@ -462,6 +519,7 @@ const Dashboard = () => {
             movementType={stockModal.movementType}
             onClose={() => setStockModal(null)}
             onSubmit={handleStockMovementSubmit}
+            config={config}
           />
         )}
       </div>
@@ -479,6 +537,7 @@ const Settings = () => {
   const [editingType, setEditingType] = useState(null);
   const [editingSupplier, setEditingSupplier] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [config, setConfig] = useState(getAppConfig());
 
   // Theme settings
   const [themeSettings, setThemeSettings] = useState({
@@ -514,6 +573,32 @@ const Settings = () => {
       setSuppliers(response.data);
     } catch (error) {
       console.error('Hiba a beszállítók betöltésekor:', error);
+    }
+  };
+
+  // Configuration save function
+  const handleConfigSave = () => {
+    saveAppConfig(config);
+    alert('Beállítások mentve! Az oldal újratöltése szükséges a változások megjelenítéséhez.');
+    window.location.reload();
+  };
+
+  // Logo upload handler
+  const handleLogoUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      if (file.type.includes('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setConfig({
+            ...config,
+            logoUrl: e.target.result
+          });
+        };
+        reader.readAsDataURL(file);
+      } else {
+        alert('Kérlek, csak kép fájlokat (PNG, JPG) válassz!');
+      }
     }
   };
 
@@ -611,19 +696,31 @@ const Settings = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <header className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-800 mb-2">
-              ⚙️ Beállítások
-            </h1>
-            <p className="text-gray-600">
-              Rendszer konfiguráció és karbantartás
-            </p>
+          <div className="flex items-center gap-4">
+            {config.logoUrl && (
+              <img 
+                src={config.logoUrl} 
+                alt="Logo" 
+                className="h-16 w-16 object-contain rounded-lg shadow-md"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+            )}
+            <div>
+              <h1 className="text-4xl font-bold text-gray-800 mb-2">
+                ⚙️ {config.labels.settings}
+              </h1>
+              <p className="text-gray-600">
+                Rendszer konfiguráció és karbantartás
+              </p>
+            </div>
           </div>
           <Link
             to="/"
             className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium flex items-center gap-2"
           >
-            🏠 Vissza a főoldalra
+            🏠 {config.labels.backToMain}
           </Link>
         </header>
 
@@ -634,13 +731,25 @@ const Settings = () => {
               onClick={() => setActiveTab('types')}
               className={`px-6 py-4 font-medium ${activeTab === 'types' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
             >
-              📦 Alkatrésztípusok kezelése
+              📦 {config.labels.partTypes} {config.labels.management}
             </button>
             <button
               onClick={() => setActiveTab('suppliers')}
               className={`px-6 py-4 font-medium ${activeTab === 'suppliers' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
             >
-              🏢 Beszállítók kezelése
+              🏢 {config.labels.suppliers} {config.labels.management}
+            </button>
+            <button
+              onClick={() => setActiveTab('labels')}
+              className={`px-6 py-4 font-medium ${activeTab === 'labels' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              🏷️ Megnevezések
+            </button>
+            <button
+              onClick={() => setActiveTab('branding')}
+              className={`px-6 py-4 font-medium ${activeTab === 'branding' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              🎨 Logo & Design
             </button>
             <button
               onClick={() => setActiveTab('database')}
@@ -660,21 +769,21 @@ const Settings = () => {
             {/* Alkatrésztípusok Tab */}
             {activeTab === 'types' && (
               <div>
-                <h3 className="text-lg font-semibold mb-4">Alkatrésztípusok kezelése</h3>
+                <h3 className="text-lg font-semibold mb-4">{config.labels.partTypes} {config.labels.management}</h3>
                 
                 <form onSubmit={handleAddType} className="mb-6 flex gap-2">
                   <input
                     type="text"
                     value={newTypeName}
                     onChange={(e) => setNewTypeName(e.target.value)}
-                    placeholder="Új alkatrésztípus neve..."
+                    placeholder={`Új ${config.labels.partTypes.toLowerCase()} neve...`}
                     className="flex-1 p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
                   />
                   <button
                     type="submit"
                     className="bg-green-500 text-white px-6 py-3 rounded hover:bg-green-600 font-medium"
                   >
-                    ➕ Hozzáadás
+                    ➕ {config.labels.add}
                   </button>
                 </form>
                 
@@ -701,13 +810,13 @@ const Settings = () => {
                             }}
                             className="bg-green-500 text-white px-3 py-2 rounded text-sm font-medium"
                           >
-                            ✅ Mentés
+                            ✅ {config.labels.save}
                           </button>
                           <button
                             onClick={() => setEditingType(null)}
                             className="bg-gray-500 text-white px-3 py-2 rounded text-sm font-medium"
                           >
-                            ❌ Mégsem
+                            ❌ {config.labels.cancel}
                           </button>
                         </div>
                       ) : (
@@ -718,13 +827,13 @@ const Settings = () => {
                               onClick={() => setEditingType(type.id)}
                               className="bg-blue-500 text-white px-3 py-2 rounded text-sm font-medium hover:bg-blue-600"
                             >
-                              ✏️ Szerkesztés
+                              ✏️ {config.labels.edit}
                             </button>
                             <button
                               onClick={() => handleDeleteType(type.id)}
                               className="bg-red-500 text-white px-3 py-2 rounded text-sm font-medium hover:bg-red-600"
                             >
-                              🗑️ Törlés
+                              🗑️ {config.labels.delete}
                             </button>
                           </div>
                         </>
@@ -738,21 +847,21 @@ const Settings = () => {
             {/* Beszállítók Tab */}
             {activeTab === 'suppliers' && (
               <div>
-                <h3 className="text-lg font-semibold mb-4">Beszállítók kezelése</h3>
+                <h3 className="text-lg font-semibold mb-4">{config.labels.suppliers} {config.labels.management}</h3>
                 
                 <form onSubmit={handleAddSupplier} className="mb-6 flex gap-2">
                   <input
                     type="text"
                     value={newSupplierName}
                     onChange={(e) => setNewSupplierName(e.target.value)}
-                    placeholder="Új beszállító neve..."
+                    placeholder={`Új ${config.labels.supplier.toLowerCase()} neve...`}
                     className="flex-1 p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
                   />
                   <button
                     type="submit"
                     className="bg-green-500 text-white px-6 py-3 rounded hover:bg-green-600 font-medium"
                   >
-                    ➕ Hozzáadás
+                    ➕ {config.labels.add}
                   </button>
                 </form>
                 
@@ -779,13 +888,13 @@ const Settings = () => {
                             }}
                             className="bg-green-500 text-white px-3 py-2 rounded text-sm font-medium"
                           >
-                            ✅ Mentés
+                            ✅ {config.labels.save}
                           </button>
                           <button
                             onClick={() => setEditingSupplier(null)}
                             className="bg-gray-500 text-white px-3 py-2 rounded text-sm font-medium"
                           >
-                            ❌ Mégsem
+                            ❌ {config.labels.cancel}
                           </button>
                         </div>
                       ) : (
@@ -796,19 +905,255 @@ const Settings = () => {
                               onClick={() => setEditingSupplier(supplier.id)}
                               className="bg-blue-500 text-white px-3 py-2 rounded text-sm font-medium hover:bg-blue-600"
                             >
-                              ✏️ Szerkesztés
+                              ✏️ {config.labels.edit}
                             </button>
                             <button
                               onClick={() => handleDeleteSupplier(supplier.id)}
                               className="bg-red-500 text-white px-3 py-2 rounded text-sm font-medium hover:bg-red-600"
                             >
-                              🗑️ Törlés
+                              🗑️ {config.labels.delete}
                             </button>
                           </div>
                         </>
                       )}
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* Megnevezések Tab */}
+            {activeTab === 'labels' && (
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Megnevezések testreszabása</h3>
+                <p className="text-gray-600 mb-6">Itt változtathatod meg az alkalmazás szöveges elemeit a saját igényeid szerint.</p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Alkalmazás neve
+                    </label>
+                    <input
+                      type="text"
+                      value={config.appName}
+                      onChange={(e) => setConfig({...config, appName: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      placeholder="pl. Alkatrész Kezelő"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      "Alkatrészek" elnevezés
+                    </label>
+                    <input
+                      type="text"
+                      value={config.labels.parts}
+                      onChange={(e) => setConfig({...config, labels: {...config.labels, parts: e.target.value}})}
+                      className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      placeholder="pl. Termékek, Cikkek, Elemek"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      "Alkatrésztípusok" elnevezés
+                    </label>
+                    <input
+                      type="text"
+                      value={config.labels.partTypes}
+                      onChange={(e) => setConfig({...config, labels: {...config.labels, partTypes: e.target.value}})}
+                      className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      placeholder="pl. Kategóriák, Típusok"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      "Beszállítók" elnevezés
+                    </label>
+                    <input
+                      type="text"
+                      value={config.labels.suppliers}
+                      onChange={(e) => setConfig({...config, labels: {...config.labels, suppliers: e.target.value}})}
+                      className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      placeholder="pl. Szállítók, Partnerek"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      "Készlet" elnevezés
+                    </label>
+                    <input
+                      type="text"
+                      value={config.labels.stock}
+                      onChange={(e) => setConfig({...config, labels: {...config.labels, stock: e.target.value}})}
+                      className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      placeholder="pl. Raktár, Darabszám"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      "Beraktározás" elnevezés
+                    </label>
+                    <input
+                      type="text"
+                      value={config.labels.stockIn}
+                      onChange={(e) => setConfig({...config, labels: {...config.labels, stockIn: e.target.value}})}
+                      className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      placeholder="pl. Beszerzés, Feltöltés"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      "Kiadás" elnevezés
+                    </label>
+                    <input
+                      type="text"
+                      value={config.labels.stockOut}
+                      onChange={(e) => setConfig({...config, labels: {...config.labels, stockOut: e.target.value}})}
+                      className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      placeholder="pl. Értékesítés, Kivétel"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      "Keresés" gomb szövege
+                    </label>
+                    <input
+                      type="text"
+                      value={config.labels.search}
+                      onChange={(e) => setConfig({...config, labels: {...config.labels, search: e.target.value}})}
+                      className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      placeholder="pl. Keres, Talál"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <button
+                    onClick={handleConfigSave}
+                    className="bg-green-500 text-white px-6 py-3 rounded hover:bg-green-600 font-medium"
+                  >
+                    💾 Megnevezések mentése
+                  </button>
+                </div>
+
+                <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                  <h4 className="font-semibold text-blue-800 mb-2">📝 Előnézet</h4>
+                  <div className="space-y-2 text-blue-700">
+                    <p><strong>App név:</strong> {config.appName}</p>
+                    <p><strong>Főoldal leírás:</strong> {config.labels.parts} és raktárkészlet kezelése</p>
+                    <p><strong>Gomb:</strong> ➕ {config.labels.newPart}</p>
+                    <p><strong>Táblázat oszlopok:</strong> {config.labels.name}, {config.labels.code}, {config.labels.type}, {config.labels.supplier}, {config.labels.stock}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Logo & Design Tab */}
+            {activeTab === 'branding' && (
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Logo és Design</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="font-semibold mb-3">📷 Logo feltöltés</h4>
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                      {config.logoUrl ? (
+                        <div>
+                          <img 
+                            src={config.logoUrl} 
+                            alt="Current Logo" 
+                            className="mx-auto h-32 w-32 object-contain mb-4 rounded-lg shadow-md"
+                          />
+                          <p className="text-sm text-gray-600 mb-4">Jelenlegi logo</p>
+                        </div>
+                      ) : (
+                        <div className="mb-4">
+                          <div className="mx-auto h-32 w-32 bg-gray-200 rounded-lg flex items-center justify-center mb-4">
+                            <span className="text-gray-400 text-4xl">🖼️</span>
+                          </div>
+                          <p className="text-sm text-gray-600">Nincs logo feltöltve</p>
+                        </div>
+                      )}
+                      
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/jpg"
+                        onChange={handleLogoUpload}
+                        className="hidden"
+                        id="logo-upload"
+                      />
+                      <label
+                        htmlFor="logo-upload"
+                        className="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-600 font-medium"
+                      >
+                        📁 Logo kiválasztása
+                      </label>
+                      
+                      {config.logoUrl && (
+                        <button
+                          onClick={() => setConfig({...config, logoUrl: ''})}
+                          className="ml-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 font-medium"
+                        >
+                          🗑️ Logo törlése
+                        </button>
+                      )}
+                    </div>
+                    
+                    <div className="mt-4 text-sm text-gray-600">
+                      <p><strong>Támogatott formátumok:</strong> PNG, JPG, JPEG</p>
+                      <p><strong>Ajánlott méret:</strong> 64x64 pixel vagy négyzet alakú</p>
+                      <p><strong>Megjelenés:</strong> Főoldal és beállítások oldal fejlécében</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold mb-3">🎨 Design előnézet</h4>
+                    <div className="border rounded-lg p-4 bg-white">
+                      <div className="flex items-center gap-3 mb-4">
+                        {config.logoUrl && (
+                          <img 
+                            src={config.logoUrl} 
+                            alt="Logo Preview" 
+                            className="h-12 w-12 object-contain rounded shadow"
+                          />
+                        )}
+                        <div>
+                          <h5 className="text-xl font-bold text-gray-800">🔧 {config.appName}</h5>
+                          <p className="text-gray-600 text-sm">{config.labels.parts} és raktárkészlet kezelése</p>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2 text-sm">
+                        <div className="bg-green-100 p-2 rounded">
+                          <span className="text-green-800">➕ {config.labels.newPart}</span>
+                        </div>
+                        <div className="bg-blue-100 p-2 rounded">
+                          <span className="text-blue-800">🔍 {config.labels.search}</span>
+                        </div>
+                        <div className="bg-gray-100 p-2 rounded text-xs">
+                          <span className="font-semibold">{config.labels.name}</span> | 
+                          <span className="font-semibold"> {config.labels.code}</span> | 
+                          <span className="font-semibold"> {config.labels.type}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <button
+                    onClick={handleConfigSave}
+                    className="bg-green-500 text-white px-6 py-3 rounded hover:bg-green-600 font-medium"
+                  >
+                    💾 Design beállítások mentése
+                  </button>
                 </div>
               </div>
             )}
@@ -842,8 +1187,8 @@ const Settings = () => {
                   
                   <div className="bg-green-50 p-6 rounded-lg">
                     <h4 className="font-semibold text-green-800 mb-2">📊 Statisztikák</h4>
-                    <p className="text-green-600 mb-2">Alkatrésztípusok száma: {partTypes.length}</p>
-                    <p className="text-green-600 mb-2">Beszállítók száma: {suppliers.length}</p>
+                    <p className="text-green-600 mb-2">{config.labels.partTypes} száma: {partTypes.length}</p>
+                    <p className="text-green-600 mb-2">{config.labels.suppliers} száma: {suppliers.length}</p>
                     <p className="text-green-600 mb-4">Adatbázis állapot: ✅ Aktív</p>
                   </div>
 
