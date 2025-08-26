@@ -537,13 +537,562 @@ const WorkOrders = () => (
   </div>
 );
 
-const NewWorkOrder = () => (
-  <div className="min-h-screen bg-gray-100 p-8">
-    <h1 className="text-3xl font-bold mb-4">➕ Új Munkalap</h1>
-    <p>Új munkalap létrehozása (fejlesztés alatt...)</p>
-    <Link to="/" className="text-blue-500">← Vissza</Link>
-  </div>
-);
+const NewWorkOrder = () => {
+  const [clients, setClients] = useState([]);
+  const [vehicles, setVehicles] = useState([]);
+  const [turboParts, setTurboParts] = useState([]);
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [workOrderData, setWorkOrderData] = useState({
+    turbo_code: '',
+    parts: [],
+    status_passed: false,
+    status_refused: false,
+    cleaning_price: 170,
+    reconditioning_price: 170,
+    turbo_price: 240,
+    quote_sent: false,
+    quote_accepted: false,
+    estimated_completion: ''
+  });
+  const [searchClient, setSearchClient] = useState('');
+  const [showNewClientForm, setShowNewClientForm] = useState(false);
+  const [newClient, setNewClient] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    address: '',
+    company_name: ''
+  });
+
+  useEffect(() => {
+    loadClients();
+    loadTurboParts();
+  }, []);
+
+  const loadClients = async () => {
+    try {
+      const response = await axios.get(`${API}/clients`);
+      setClients(response.data);
+    } catch (error) {
+      console.error('Hiba az ügyfelek betöltésekor:', error);
+    }
+  };
+
+  const loadTurboParts = async () => {
+    try {
+      const response = await axios.get(`${API}/turbo-parts`);
+      setTurboParts(response.data);
+    } catch (error) {
+      console.error('Hiba az alkatrészek betöltésekor:', error);
+    }
+  };
+
+  const loadVehicles = async (clientId) => {
+    try {
+      const response = await axios.get(`${API}/vehicles?client_id=${clientId}`);
+      setVehicles(response.data);
+    } catch (error) {
+      console.error('Hiba a járművek betöltésekor:', error);
+    }
+  };
+
+  const handleClientSelect = (client) => {
+    setSelectedClient(client);
+    loadVehicles(client.id);
+  };
+
+  const handleAddNewClient = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post(`${API}/clients`, newClient);
+      setSelectedClient(response.data);
+      setShowNewClientForm(false);
+      setNewClient({ name: '', phone: '', email: '', address: '', company_name: '' });
+      loadClients();
+      loadVehicles(response.data.id);
+    } catch (error) {
+      alert('Hiba: ' + (error.response?.data?.detail || 'Nem sikerült hozzáadni az ügyfelet'));
+    }
+  };
+
+  const handlePartToggle = (part) => {
+    const updatedParts = [...workOrderData.parts];
+    const existingIndex = updatedParts.findIndex(p => p.part_id === part.id);
+    
+    if (existingIndex >= 0) {
+      updatedParts[existingIndex].selected = !updatedParts[existingIndex].selected;
+    } else {
+      updatedParts.push({
+        part_id: part.id,
+        part_code: part.part_code,
+        category: part.category,
+        supplier: part.supplier,
+        price: part.price,
+        selected: true
+      });
+    }
+    
+    setWorkOrderData({...workOrderData, parts: updatedParts});
+  };
+
+  const isPartSelected = (partId) => {
+    const part = workOrderData.parts.find(p => p.part_id === partId);
+    return part ? part.selected : false;
+  };
+
+  const calculateTotal = () => {
+    const partsTotal = workOrderData.parts
+      .filter(p => p.selected)
+      .reduce((sum, p) => sum + p.price, 0);
+    
+    return workOrderData.cleaning_price + 
+           workOrderData.reconditioning_price + 
+           workOrderData.turbo_price + 
+           partsTotal;
+  };
+
+  const handleSubmit = async () => {
+    if (!selectedClient || !workOrderData.turbo_code) {
+      alert('Ügyfél és turbó kód megadása kötelező!');
+      return;
+    }
+
+    try {
+      // Create work order
+      const workOrderPayload = {
+        client_id: selectedClient.id,
+        vehicle_id: selectedVehicle?.id || null,
+        turbo_code: workOrderData.turbo_code
+      };
+
+      const response = await axios.post(`${API}/work-orders`, workOrderPayload);
+      
+      // Update with additional data
+      const updatePayload = {
+        parts: workOrderData.parts,
+        status_passed: workOrderData.status_passed,
+        status_refused: workOrderData.status_refused,
+        cleaning_price: workOrderData.cleaning_price,
+        reconditioning_price: workOrderData.reconditioning_price,
+        turbo_price: workOrderData.turbo_price,
+        quote_sent: workOrderData.quote_sent,
+        quote_accepted: workOrderData.quote_accepted,
+        estimated_completion: workOrderData.estimated_completion || null
+      };
+
+      await axios.put(`${API}/work-orders/${response.data.id}`, updatePayload);
+      
+      alert(`Munkalap sikeresen létrehozva! Sorszám: #${response.data.work_number}`);
+      
+      // Reset form
+      setSelectedClient(null);
+      setSelectedVehicle(null);
+      setVehicles([]);
+      setWorkOrderData({
+        turbo_code: '',
+        parts: [],
+        status_passed: false,
+        status_refused: false,
+        cleaning_price: 170,
+        reconditioning_price: 170,
+        turbo_price: 240,
+        quote_sent: false,
+        quote_accepted: false,
+        estimated_completion: ''
+      });
+      
+    } catch (error) {
+      alert('Hiba: ' + (error.response?.data?.detail || 'Nem sikerült létrehozni a munkalapot'));
+    }
+  };
+
+  const filteredClients = clients.filter(client =>
+    client.name.toLowerCase().includes(searchClient.toLowerCase()) ||
+    client.phone.includes(searchClient)
+  );
+
+  const partsByCategory = {
+    'C.H.R.A': turboParts.filter(p => p.category === 'C.H.R.A'),
+    'GEO': turboParts.filter(p => p.category === 'GEO'),
+    'ACT': turboParts.filter(p => p.category === 'ACT'),
+    'SET.GAR': turboParts.filter(p => p.category === 'SET.GAR')
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">📋 Új Munkalap</h1>
+            <p className="text-gray-600">Turbó javítási munkalap létrehozása</p>
+          </div>
+          <Link to="/" className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 font-medium">
+            🏠 Vissza
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Side - Client & Vehicle Selection */}
+          <div className="space-y-6">
+            {/* Client Selection */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-lg font-semibold mb-4">👥 Ügyfél kiválasztása</h3>
+              
+              {!selectedClient ? (
+                <div>
+                  <div className="mb-4">
+                    <input
+                      type="text"
+                      placeholder="Keresés név vagy telefon szerint..."
+                      value={searchClient}
+                      onChange={(e) => setSearchClient(e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div className="max-h-64 overflow-y-auto mb-4">
+                    {filteredClients.map(client => (
+                      <div
+                        key={client.id}
+                        onClick={() => handleClientSelect(client)}
+                        className="p-3 border border-gray-200 rounded mb-2 cursor-pointer hover:bg-blue-50 hover:border-blue-300"
+                      >
+                        <div className="font-medium">{client.name}</div>
+                        <div className="text-sm text-gray-600">{client.phone}</div>
+                        {client.company_name && (
+                          <div className="text-sm text-gray-500">{client.company_name}</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={() => setShowNewClientForm(true)}
+                    className="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600 font-medium"
+                  >
+                    ➕ Új ügyfél hozzáadása
+                  </button>
+                </div>
+              ) : (
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="font-bold text-blue-800">{selectedClient.name}</div>
+                      <div className="text-blue-600">{selectedClient.phone}</div>
+                      {selectedClient.company_name && (
+                        <div className="text-blue-600">{selectedClient.company_name}</div>
+                      )}
+                      {selectedClient.address && (
+                        <div className="text-sm text-blue-500">{selectedClient.address}</div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedClient(null);
+                        setSelectedVehicle(null);
+                        setVehicles([]);
+                      }}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      ❌
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Vehicle Selection */}
+            {selectedClient && (
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-semibold mb-4">🚗 Jármű (opcionális)</h3>
+                
+                {vehicles.length > 0 ? (
+                  <div className="space-y-2">
+                    {vehicles.map(vehicle => (
+                      <div
+                        key={vehicle.id}
+                        onClick={() => setSelectedVehicle(vehicle)}
+                        className={`p-3 border rounded cursor-pointer ${
+                          selectedVehicle?.id === vehicle.id 
+                            ? 'border-blue-500 bg-blue-50' 
+                            : 'border-gray-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="font-medium">
+                          {vehicle.make} {vehicle.model} ({vehicle.year})
+                        </div>
+                        {vehicle.license_plate && (
+                          <div className="text-sm text-gray-600">Rendszám: {vehicle.license_plate}</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-gray-500 text-center py-4">
+                    Nincs regisztrált jármű ehhez az ügyfélhez
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Turbo Code */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-lg font-semibold mb-4">🔧 Turbó kód</h3>
+              <input
+                type="text"
+                placeholder="pl. 5490-970-0071"
+                value={workOrderData.turbo_code}
+                onChange={(e) => setWorkOrderData({...workOrderData, turbo_code: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 font-mono text-lg"
+              />
+            </div>
+          </div>
+
+          {/* Right Side - Parts Selection & Pricing */}
+          <div className="space-y-6">
+            {/* Parts Selection */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-lg font-semibold mb-4">🔧 Alkatrészek kiválasztása</h3>
+              
+              <div className="grid grid-cols-1 gap-4">
+                {Object.entries(partsByCategory).map(([category, parts]) => (
+                  <div key={category} className="border border-gray-200 rounded-lg p-4">
+                    <h4 className="font-medium text-gray-800 mb-3">{category}</h4>
+                    <div className="space-y-2">
+                      {parts.map(part => (
+                        <label
+                          key={part.id}
+                          className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isPartSelected(part.id)}
+                            onChange={() => handlePartToggle(part)}
+                            className="w-4 h-4 text-blue-600 rounded"
+                          />
+                          <div className="flex-1">
+                            <div className="font-mono text-sm">{part.part_code}</div>
+                            <div className="text-xs text-gray-500">{part.supplier}</div>
+                          </div>
+                          <div className="font-medium text-blue-600">
+                            {part.price.toFixed(0)}€
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Pricing */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-lg font-semibold mb-4">💰 Árazás</h3>
+              
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <label className="font-medium">Curatat (tisztítás):</label>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="number"
+                      value={workOrderData.cleaning_price}
+                      onChange={(e) => setWorkOrderData({...workOrderData, cleaning_price: parseFloat(e.target.value) || 0})}
+                      className="w-20 p-2 border border-gray-300 rounded text-right"
+                    />
+                    <span>€</span>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <label className="font-medium">Recond (felújítás):</label>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="number"
+                      value={workOrderData.reconditioning_price}
+                      onChange={(e) => setWorkOrderData({...workOrderData, reconditioning_price: parseFloat(e.target.value) || 0})}
+                      className="w-20 p-2 border border-gray-300 rounded text-right"
+                    />
+                    <span>€</span>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <label className="font-medium">Turbo:</label>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="number"
+                      value={workOrderData.turbo_price}
+                      onChange={(e) => setWorkOrderData({...workOrderData, turbo_price: parseFloat(e.target.value) || 0})}
+                      className="w-20 p-2 border border-gray-300 rounded text-right"
+                    />
+                    <span>€</span>
+                  </div>
+                </div>
+
+                <hr className="my-4" />
+
+                <div className="flex justify-between items-center text-lg font-bold">
+                  <span>Összesen:</span>
+                  <span className="text-blue-600">{calculateTotal().toFixed(0)}€</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Status & Workflow */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-lg font-semibold mb-4">📋 Státusz & Workflow</h3>
+              
+              <div className="space-y-4">
+                <div className="flex flex-wrap gap-4">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={workOrderData.status_passed}
+                      onChange={(e) => setWorkOrderData({...workOrderData, status_passed: e.target.checked})}
+                      className="w-4 h-4 text-green-600 rounded"
+                    />
+                    <span className="text-green-700 font-medium">✅ OK (PASSED)</span>
+                  </label>
+
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={workOrderData.status_refused}
+                      onChange={(e) => setWorkOrderData({...workOrderData, status_refused: e.target.checked})}
+                      className="w-4 h-4 text-red-600 rounded"
+                    />
+                    <span className="text-red-700 font-medium">❌ REFUZAT</span>
+                  </label>
+                </div>
+
+                <div className="flex flex-wrap gap-4">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={workOrderData.quote_sent}
+                      onChange={(e) => setWorkOrderData({...workOrderData, quote_sent: e.target.checked})}
+                      className="w-4 h-4 text-purple-600 rounded"
+                    />
+                    <span className="text-purple-700 font-medium">📤 OFERTAT</span>
+                  </label>
+
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={workOrderData.quote_accepted}
+                      onChange={(e) => setWorkOrderData({...workOrderData, quote_accepted: e.target.checked})}
+                      className="w-4 h-4 text-blue-600 rounded"
+                    />
+                    <span className="text-blue-700 font-medium">✅ ACCEPT</span>
+                  </label>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    TERMEN ESTIMATIV (kész dátum):
+                  </label>
+                  <input
+                    type="date"
+                    value={workOrderData.estimated_completion}
+                    onChange={(e) => setWorkOrderData({...workOrderData, estimated_completion: e.target.value})}
+                    className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <button
+              onClick={handleSubmit}
+              className="w-full bg-green-500 text-white py-4 px-6 rounded-lg hover:bg-green-600 font-bold text-lg"
+            >
+              📋 Munkalap létrehozása
+            </button>
+          </div>
+        </div>
+
+        {/* New Client Form Modal */}
+        {showNewClientForm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+              <h3 className="text-lg font-semibold mb-4">Új ügyfél hozzáadása</h3>
+              <form onSubmit={handleAddNewClient}>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Név *</label>
+                    <input
+                      type="text"
+                      value={newClient.name}
+                      onChange={(e) => setNewClient({...newClient, name: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Telefon *</label>
+                    <input
+                      type="tel"
+                      value={newClient.phone}
+                      onChange={(e) => setNewClient({...newClient, phone: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input
+                      type="email"
+                      value={newClient.email}
+                      onChange={(e) => setNewClient({...newClient, email: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Cégnév</label>
+                    <input
+                      type="text"
+                      value={newClient.company_name}
+                      onChange={(e) => setNewClient({...newClient, company_name: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Cím</label>
+                    <input
+                      type="text"
+                      value={newClient.address}
+                      onChange={(e) => setNewClient({...newClient, address: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-6">
+                  <button
+                    type="submit"
+                    className="flex-1 bg-green-500 text-white py-2 rounded hover:bg-green-600 font-medium"
+                  >
+                    Hozzáadás
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowNewClientForm(false);
+                      setNewClient({ name: '', phone: '', email: '', address: '', company_name: '' });
+                    }}
+                    className="flex-1 bg-gray-500 text-white py-2 rounded hover:bg-gray-600 font-medium"
+                  >
+                    Mégsem
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const Parts = () => (
   <div className="min-h-screen bg-gray-100 p-8">
