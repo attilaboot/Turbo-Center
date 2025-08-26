@@ -1021,22 +1021,25 @@ const NewWorkOrder = () => {
     car_make: '',          // Autó gyártmány
     car_model: '',         // Autó modell  
     car_year: '',          // Autó évjárat
-    license_plate: '',     // Rendszám
     engine_code: '',       // Motorkód
     general_notes: '',     // Általános megjegyzések
     parts: [],
     processes: [],         // Munkafolyamatok
     status_passed: false,
     status_refused: false,
-    cleaning_price: 170,
-    reconditioning_price: 170,
-    turbo_price: 240,
+    cleaning_price: 0,     // 0 LEI alapérték
+    reconditioning_price: 0, // 0 LEI alapérték
+    turbo_price: 0,        // 0 LEI alapérték
     quote_sent: false,
     quote_accepted: false,
     estimated_completion: ''
   });
   const [searchClient, setSearchClient] = useState('');
   const [showNewClientForm, setShowNewClientForm] = useState(false);
+  const [carMakes, setCarMakes] = useState([]);
+  const [carModels, setCarModels] = useState([]);
+  const [turboWarnings, setTurboWarnings] = useState([]);
+  const [carWarnings, setCarWarnings] = useState([]);
   const [newClient, setNewClient] = useState({
     name: '',
     phone: '',
