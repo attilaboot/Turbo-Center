@@ -1298,16 +1298,108 @@ const NewWorkOrder = () => {
               </div>
             )}
 
-            {/* Turbo Code */}
+            {/* Turbo Code & Car Details */}
             <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-lg font-semibold mb-4">🔧 Turbó kód</h3>
-              <input
-                type="text"
-                placeholder="pl. 5490-970-0071"
-                value={workOrderData.turbo_code}
-                onChange={(e) => setWorkOrderData({...workOrderData, turbo_code: e.target.value})}
-                className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 font-mono text-lg"
-              />
+              <h3 className="text-lg font-semibold mb-4">🔧 Turbó és jármű adatok</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Turbó kód *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="pl. 5490-970-0071"
+                    value={workOrderData.turbo_code}
+                    onChange={(e) => setWorkOrderData({...workOrderData, turbo_code: e.target.value})}
+                    className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 font-mono text-lg"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Autó márka *
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="pl. BMW, Audi, Mercedes"
+                      value={workOrderData.car_make}
+                      onChange={(e) => setWorkOrderData({...workOrderData, car_make: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Autó típus *
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="pl. X5, A4, C-Class"
+                      value={workOrderData.car_model}
+                      onChange={(e) => setWorkOrderData({...workOrderData, car_model: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Évjárat
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="pl. 2015"
+                      value={workOrderData.car_year}
+                      onChange={(e) => setWorkOrderData({...workOrderData, car_year: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      min="1990"
+                      max="2030"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Rendszám
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="pl. ABC123"
+                      value={workOrderData.license_plate}
+                      onChange={(e) => setWorkOrderData({...workOrderData, license_plate: e.target.value.toUpperCase()})}
+                      className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Motorkód
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="pl. N47D20"
+                    value={workOrderData.engine_code}
+                    onChange={(e) => setWorkOrderData({...workOrderData, engine_code: e.target.value})}
+                    className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Általános megjegyzések
+                  </label>
+                  <textarea
+                    placeholder="Ügyfél panaszai, előzmények, egyéb megjegyzések..."
+                    value={workOrderData.general_notes}
+                    onChange={(e) => setWorkOrderData({...workOrderData, general_notes: e.target.value})}
+                    className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                    rows="3"
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
