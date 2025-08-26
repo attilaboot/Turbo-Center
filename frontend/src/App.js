@@ -215,20 +215,20 @@ const StockMovementModal = ({ partId, partName, partCode, movementType, onClose,
 const QuickAddForm = ({ partTypes, suppliers, onSubmit, config }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
-    name: "",
     code: "",
     part_type_id: "",
-    supplier_id: ""
+    supplier_id: "",
+    notes: ""
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.code || !formData.part_type_id || !formData.supplier_id) {
-      alert("Minden mező kitöltése kötelező!");
+    if (!formData.code || !formData.part_type_id || !formData.supplier_id) {
+      alert("Kód, típus és beszállító kitöltése kötelező!");
       return;
     }
     onSubmit(formData);
-    setFormData({ name: "", code: "", part_type_id: "", supplier_id: "" });
+    setFormData({ code: "", part_type_id: "", supplier_id: "", notes: "" });
     setIsOpen(false);
   };
 
@@ -249,19 +249,6 @@ const QuickAddForm = ({ partTypes, suppliers, onSubmit, config }) => {
     <div className="bg-white p-6 rounded-lg shadow-md mb-6">
       <h3 className="text-lg font-semibold mb-4">{config.labels.newPart}</h3>
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {config.labels.name} *
-          </label>
-          <input
-            type="text"
-            value={formData.name}
-            onChange={(e) => setFormData({...formData, name: e.target.value})}
-            className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-            placeholder="pl. Turbo CHRA..."
-          />
-        </div>
-        
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             {config.labels.code} *
@@ -305,6 +292,19 @@ const QuickAddForm = ({ partTypes, suppliers, onSubmit, config }) => {
               <option key={supplier.id} value={supplier.id}>{supplier.name}</option>
             ))}
           </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {config.labels.notes}
+          </label>
+          <input
+            type="text"
+            value={formData.notes}
+            onChange={(e) => setFormData({...formData, notes: e.target.value})}
+            className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+            placeholder="pl. Megjegyzés..."
+          />
         </div>
         
         <div className="md:col-span-2 flex gap-2">
