@@ -1000,7 +1000,14 @@ const NewWorkOrder = () => {
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [workOrderData, setWorkOrderData] = useState({
     turbo_code: '',
+    car_make: '',          // Autó gyártmány
+    car_model: '',         // Autó modell  
+    car_year: '',          // Autó évjárat
+    license_plate: '',     // Rendszám
+    engine_code: '',       // Motorkód
+    general_notes: '',     // Általános megjegyzések
     parts: [],
+    processes: [],         // Munkafolyamatok
     status_passed: false,
     status_refused: false,
     cleaning_price: 170,
