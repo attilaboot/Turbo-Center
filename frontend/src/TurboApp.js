@@ -1360,9 +1360,9 @@ const NewWorkOrder = () => {
                       type="number"
                       value={workOrderData.cleaning_price}
                       onChange={(e) => setWorkOrderData({...workOrderData, cleaning_price: parseFloat(e.target.value) || 0})}
-                      className="w-20 p-2 border border-gray-300 rounded text-right"
+                      className="w-20 p-2 border border-gray-300 rounded text-right text-sm"
                     />
-                    <span>€</span>
+                    <span className="text-sm">LEI</span>
                   </div>
                 </div>
 
@@ -1373,9 +1373,9 @@ const NewWorkOrder = () => {
                       type="number"
                       value={workOrderData.reconditioning_price}
                       onChange={(e) => setWorkOrderData({...workOrderData, reconditioning_price: parseFloat(e.target.value) || 0})}
-                      className="w-20 p-2 border border-gray-300 rounded text-right"
+                      className="w-20 p-2 border border-gray-300 rounded text-right text-sm"
                     />
-                    <span>€</span>
+                    <span className="text-sm">LEI</span>
                   </div>
                 </div>
 
@@ -1386,9 +1386,9 @@ const NewWorkOrder = () => {
                       type="number"
                       value={workOrderData.turbo_price}
                       onChange={(e) => setWorkOrderData({...workOrderData, turbo_price: parseFloat(e.target.value) || 0})}
-                      className="w-20 p-2 border border-gray-300 rounded text-right"
+                      className="w-20 p-2 border border-gray-300 rounded text-right text-sm"
                     />
-                    <span>€</span>
+                    <span className="text-sm">LEI</span>
                   </div>
                 </div>
 
@@ -1396,7 +1396,7 @@ const NewWorkOrder = () => {
 
                 <div className="flex justify-between items-center text-lg font-bold">
                   <span>Összesen:</span>
-                  <span className="text-blue-600">{calculateTotal().toFixed(0)}€</span>
+                  <span className="text-blue-600">{calculateTotal().toFixed(0)} LEI</span>
                 </div>
               </div>
             </div>
