@@ -113,13 +113,30 @@ class TurboPartCreate(BaseModel):
     in_stock: bool = True
 
 
-class WorkOrderPart(BaseModel):
-    part_id: str
-    part_code: str
+class WorkProcess(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str                       # pl. "Szétszerelés", "Tisztítás", "Diagnosztika"
+    category: str                   # pl. "Diagnosis", "Cleaning", "Assembly"
+    estimated_time: int = 0         # becslés percekben
+    base_price: float = 0.0         # alapár
+    active: bool = True
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class WorkProcessCreate(BaseModel):
+    name: str
     category: str
-    supplier: str
+    estimated_time: int = 0
+    base_price: float = 0.0
+
+
+class WorkOrderProcess(BaseModel):
+    process_id: str
+    process_name: str
+    category: str
+    estimated_time: int
     price: float
     selected: bool = False
+    notes: str = ""
 
 class WorkOrder(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -132,7 +149,7 @@ class WorkOrder(BaseModel):
     received_date: date = Field(default_factory=date.today)
     
     # Parts selection
-    parts: List[WorkOrderPart] = []
+    parts: List[WorkOrderProcess] = []
     
     # Status checkboxes
     status_passed: bool = False     # OK (PASSED)
@@ -165,7 +182,7 @@ class WorkOrderCreate(BaseModel):
 
 class WorkOrderUpdate(BaseModel):
     turbo_code: Optional[str] = None
-    parts: Optional[List[WorkOrderPart]] = None
+    parts: Optional[List[WorkOrderProcess]] = None
     status_passed: Optional[bool] = None
     status_refused: Optional[bool] = None
     cleaning_price: Optional[float] = None
