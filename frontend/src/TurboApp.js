@@ -1132,7 +1132,14 @@ const NewWorkOrder = () => {
       
       // Update with additional data
       const updatePayload = {
+        car_make: workOrderData.car_make,
+        car_model: workOrderData.car_model,
+        car_year: workOrderData.car_year,
+        license_plate: workOrderData.license_plate,
+        engine_code: workOrderData.engine_code,
+        general_notes: workOrderData.general_notes,
         parts: workOrderData.parts,
+        processes: workOrderData.processes,
         status_passed: workOrderData.status_passed,
         status_refused: workOrderData.status_refused,
         cleaning_price: workOrderData.cleaning_price,
