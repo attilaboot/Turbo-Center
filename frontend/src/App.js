@@ -338,6 +338,24 @@ const Dashboard = () => {
   const [editingPart, setEditingPart] = useState(null);
   const [config, setConfig] = useState(getAppConfig());
 
+  // Listen for config changes
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setConfig(getAppConfig());
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    // Also check for config changes periodically
+    const interval = setInterval(() => {
+      setConfig(getAppConfig());
+    }, 1000);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
+
   // Adatok betöltése
   const loadParts = async (search = '') => {
     try {
