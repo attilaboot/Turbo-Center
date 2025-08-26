@@ -454,7 +454,7 @@ const Dashboard = () => {
   // Készletmozgás
   const handleStockMovement = (partId, movementType) => {
     const part = parts.find(p => p.id === partId);
-    setStockModal({ partId, partName: part.name, movementType });
+    setStockModal({ partId, partCode: part.code, movementType });
   };
 
   const handleStockMovementSubmit = async (partId, movementType, quantity) => {
