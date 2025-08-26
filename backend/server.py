@@ -54,25 +54,25 @@ class SupplierCreate(BaseModel):
 
 class Part(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    name: str
     code: str
     part_type_id: str
     supplier_id: str
+    notes: str = ""  # Új jegyzet mező
     stock_quantity: int = 0
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 class PartCreate(BaseModel):
-    name: str
     code: str
     part_type_id: str
     supplier_id: str
+    notes: str = ""  # Új jegyzet mező
 
 class PartUpdate(BaseModel):
-    name: Optional[str] = None
     code: Optional[str] = None
     part_type_id: Optional[str] = None
     supplier_id: Optional[str] = None
+    notes: Optional[str] = None  # Új jegyzet mező
 
 
 class StockMovement(BaseModel):
@@ -90,10 +90,10 @@ class StockMovementCreate(BaseModel):
 
 class PartWithDetails(BaseModel):
     id: str
-    name: str
     code: str
     part_type_name: str
     supplier_name: str
+    notes: str  # Új jegyzet mező
     stock_quantity: int
     created_at: datetime
     updated_at: datetime
@@ -239,8 +239,8 @@ async def get_parts(search: Optional[str] = None):
         pipeline.append({
             "$match": {
                 "$or": [
-                    {"name": {"$regex": search, "$options": "i"}},
                     {"code": {"$regex": search, "$options": "i"}},
+                    {"notes": {"$regex": search, "$options": "i"}},
                     {"part_type.name": {"$regex": search, "$options": "i"}},
                     {"supplier.name": {"$regex": search, "$options": "i"}}
                 ]
@@ -253,10 +253,10 @@ async def get_parts(search: Optional[str] = None):
     for part in parts:
         result.append(PartWithDetails(
             id=part["id"],
-            name=part["name"],
             code=part["code"],
             part_type_name=part["part_type"]["name"],
             supplier_name=part["supplier"]["name"],
+            notes=part.get("notes", ""),  # Új jegyzet mező
             stock_quantity=part["stock_quantity"],
             created_at=part["created_at"],
             updated_at=part["updated_at"]
@@ -271,8 +271,6 @@ async def update_part(part_id: str, part: PartUpdate):
         raise HTTPException(status_code=404, detail="Alkatrész nem található")
     
     update_data = {}
-    if part.name is not None:
-        update_data["name"] = part.name
     if part.code is not None:
         # Ellenőrizzük, hogy a kód egyedi legyen
         existing_code = await db.parts.find_one({"code": part.code, "id": {"$ne": part_id}})
@@ -289,6 +287,8 @@ async def update_part(part_id: str, part: PartUpdate):
         if not supplier:
             raise HTTPException(status_code=400, detail="Beszállító nem található")
         update_data["supplier_id"] = part.supplier_id
+    if part.notes is not None:
+        update_data["notes"] = part.notes
     
     if update_data:
         update_data["updated_at"] = datetime.utcnow()
