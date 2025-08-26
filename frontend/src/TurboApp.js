@@ -6,6 +6,44 @@ import "./App.css";
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
+// Application Configuration
+const getAppConfig = () => {
+  const savedConfig = localStorage.getItem('turboAppConfig');
+  return savedConfig ? JSON.parse(savedConfig) : {
+    appName: "Turbó Szerviz Kezelő",
+    logoUrl: "",
+    labels: {
+      clients: "Ügyfelek",
+      workOrders: "Munkalapok", 
+      newWorkOrder: "Új Munkalap",
+      parts: "Alkatrészek",
+      processes: "Munkafolyamatok",
+      settings: "Beállítások",
+      dashboard: "Áttekintés",
+      search: "Keresés",
+      add: "Hozzáadás",
+      edit: "Szerkesztés",
+      delete: "Törlés",
+      save: "Mentés",
+      cancel: "Mégsem",
+      name: "Név",
+      phone: "Telefon",
+      address: "Cím",
+      company: "Cégnév",
+      vehicle: "Jármű",
+      turboCode: "Turbó kód",
+      status: "Státusz",
+      total: "Összeg",
+      notes: "Megjegyzések",
+      backToMain: "Vissza a főoldalra"
+    }
+  };
+};
+
+const saveAppConfig = (config) => {
+  localStorage.setItem('turboAppConfig', JSON.stringify(config));
+};
+
 // Status translations
 const statusTranslations = {
   'RECEIVED': 'Beérkezett',
