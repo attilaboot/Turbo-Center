@@ -45,12 +45,16 @@ const saveAppConfig = (config) => {
 
 // Utility komponensek
 const SearchBar = ({ onSearch, searchTerm, setSearchTerm, config }) => {
+  const placeholderText = config?.labels ? 
+    `${config.labels.search || 'Keresés'} ${(config.labels.parts || 'alkatrészek').toLowerCase()} ${(config.labels.code || 'kód').toLowerCase()}, ${(config.labels.type || 'típus').toLowerCase()}, ${(config.labels.supplier || 'beszállító').toLowerCase()} vagy ${(config.labels.notes || 'jegyzet').toLowerCase()} szerint...` :
+    'Keresés alkatrészek kód, típus, beszállító vagy jegyzet szerint...';
+
   return (
     <div className="mb-6">
       <div className="relative">
         <input
           type="text"
-          placeholder={`${config.labels.search} ${config.labels.parts.toLowerCase()} ${config.labels.code.toLowerCase()}, ${config.labels.type.toLowerCase()}, ${config.labels.supplier.toLowerCase()} vagy ${config.labels.notes.toLowerCase()} szerint...`}
+          placeholder={placeholderText}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
@@ -59,7 +63,7 @@ const SearchBar = ({ onSearch, searchTerm, setSearchTerm, config }) => {
           onClick={onSearch}
           className="absolute right-2 top-2 bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 font-medium"
         >
-          🔍 {config.labels.search}
+          🔍 {config?.labels?.search || 'Keresés'}
         </button>
       </div>
     </div>
