@@ -1115,8 +1115,8 @@ const NewWorkOrder = () => {
   };
 
   const handleSubmit = async () => {
-    if (!selectedClient || !workOrderData.turbo_code) {
-      alert('Ügyfél és turbó kód megadása kötelező!');
+    if (!selectedClient || !workOrderData.turbo_code || !workOrderData.car_make || !workOrderData.car_model) {
+      alert('Ügyfél, turbó kód, autó márka és autó típus megadása kötelező!');
       return;
     }
 
