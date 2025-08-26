@@ -1511,13 +1511,574 @@ const NewWorkOrder = () => {
   );
 };
 
-const Parts = () => (
-  <div className="min-h-screen bg-gray-100 p-8">
-    <h1 className="text-3xl font-bold mb-4">🔧 Alkatrészek</h1>
-    <p>Alkatrészek kezelése (fejlesztés alatt...)</p>
-    <Link to="/" className="text-blue-500">← Vissza</Link>
-  </div>
-);
+const Parts = () => {
+  const [workProcesses, setWorkProcesses] = useState([]);
+  const [turboParts, setTurboParts] = useState([]);
+  const [activeTab, setActiveTab] = useState('processes');
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  // Work Process Form Data
+  const [processFormData, setProcessFormData] = useState({
+    name: '',
+    category: '',
+    estimated_time: 0,
+    base_price: 0
+  });
+
+  // Turbo Part Form Data  
+  const [partFormData, setPartFormData] = useState({
+    category: '',
+    part_code: '',
+    supplier: '',
+    price: 0
+  });
+
+  const processCategories = [
+    'Diagnosis', 'Cleaning', 'Assembly', 'Testing', 'Repair', 'Maintenance'
+  ];
+
+  const partCategories = [
+    'C.H.R.A', 'GEO', 'ACT', 'SET.GAR'
+  ];
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    await Promise.all([loadWorkProcesses(), loadTurboParts()]);
+    setLoading(false);
+  };
+
+  const loadWorkProcesses = async () => {
+    try {
+      const response = await axios.get(`${API}/work-processes`);
+      setWorkProcesses(response.data);
+    } catch (error) {
+      console.error('Hiba a munkafolyamatok betöltésekor:', error);
+    }
+  };
+
+  const loadTurboParts = async () => {
+    try {
+      const response = await axios.get(`${API}/turbo-parts`);
+      setTurboParts(response.data);
+    } catch (error) {
+      console.error('Hiba az alkatrészek betöltésekor:', error);
+    }
+  };
+
+  // Work Process Handlers
+  const handleProcessSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (editingItem && activeTab === 'processes') {
+        await axios.put(`${API}/work-processes/${editingItem.id}`, processFormData);
+      } else {
+        await axios.post(`${API}/work-processes`, processFormData);
+      }
+      
+      setProcessFormData({ name: '', category: '', estimated_time: 0, base_price: 0 });
+      setShowForm(false);
+      setEditingItem(null);
+      loadWorkProcesses();
+    } catch (error) {
+      alert('Hiba: ' + (error.response?.data?.detail || 'Nem sikerült menteni'));
+    }
+  };
+
+  const handleProcessEdit = (process) => {
+    setProcessFormData({
+      name: process.name,
+      category: process.category,
+      estimated_time: process.estimated_time,
+      base_price: process.base_price
+    });
+    setEditingItem(process);
+    setShowForm(true);
+  };
+
+  const handleProcessDelete = async (processId) => {
+    if (!window.confirm('Biztosan törölni szeretnéd ezt a munkafolyamatot?')) return;
+    
+    try {
+      await axios.delete(`${API}/work-processes/${processId}`);
+      loadWorkProcesses();
+    } catch (error) {
+      alert('Hiba: ' + (error.response?.data?.detail || 'Nem sikerült törölni'));
+    }
+  };
+
+  // Turbo Part Handlers
+  const handlePartSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (editingItem && activeTab === 'parts') {
+        await axios.put(`${API}/turbo-parts/${editingItem.id}`, partFormData);
+      } else {
+        await axios.post(`${API}/turbo-parts`, partFormData);
+      }
+      
+      setPartFormData({ category: '', part_code: '', supplier: '', price: 0 });
+      setShowForm(false);
+      setEditingItem(null);
+      loadTurboParts();
+    } catch (error) {
+      alert('Hiba: ' + (error.response?.data?.detail || 'Nem sikerült menteni'));
+    }
+  };
+
+  const handlePartEdit = (part) => {
+    setPartFormData({
+      category: part.category,
+      part_code: part.part_code,
+      supplier: part.supplier,
+      price: part.price
+    });
+    setEditingItem(part);
+    setShowForm(true);
+  };
+
+  const handlePartDelete = async (partId) => {
+    if (!window.confirm('Biztosan törölni szeretnéd ezt az alkatrészt?')) return;
+    
+    try {
+      await axios.delete(`${API}/turbo-parts/${partId}`);
+      loadTurboParts();
+    } catch (error) {
+      alert('Hiba: ' + (error.response?.data?.detail || 'Nem sikerült törölni'));
+    }
+  };
+
+  const filteredProcesses = workProcesses.filter(process =>
+    process.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    process.category.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredParts = turboParts.filter(part =>
+    part.part_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    part.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    part.supplier.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Betöltés...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">🔧 Alkatrészek & Munkák</h1>
+            <p className="text-gray-600">Munkafolyamatok és alkatrészek adatbázisa</p>
+          </div>
+          <Link to="/" className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 font-medium">
+            🏠 Vissza
+          </Link>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="bg-white rounded-lg shadow-md mb-6">
+          <div className="flex border-b border-gray-200">
+            <button
+              onClick={() => {
+                setActiveTab('processes');
+                setShowForm(false);
+                setEditingItem(null);
+              }}
+              className={`px-6 py-4 font-medium ${activeTab === 'processes' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              ⚙️ Munkafolyamatok ({workProcesses.length})
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('parts');
+                setShowForm(false);
+                setEditingItem(null);
+              }}
+              className={`px-6 py-4 font-medium ${activeTab === 'parts' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              🔧 Turbó alkatrészek ({turboParts.length})
+            </button>
+          </div>
+        </div>
+
+        {/* Search & Add Button */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                placeholder={`Keresés ${activeTab === 'processes' ? 'munkafolyamatok' : 'alkatrészek'} között...`}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+              <span className="absolute right-3 top-3 text-gray-400">🔍</span>
+            </div>
+            <button
+              onClick={() => {
+                setShowForm(true);
+                setEditingItem(null);
+                if (activeTab === 'processes') {
+                  setProcessFormData({ name: '', category: '', estimated_time: 0, base_price: 0 });
+                } else {
+                  setPartFormData({ category: '', part_code: '', supplier: '', price: 0 });
+                }
+              }}
+              className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 font-medium"
+            >
+              ➕ Új {activeTab === 'processes' ? 'munkafolyamat' : 'alkatrész'}
+            </button>
+          </div>
+        </div>
+
+        {/* Form Modal */}
+        {showForm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-md w-full">
+              <div className="p-6">
+                <h3 className="text-lg font-semibold mb-4">
+                  {editingItem ? 'Szerkesztés' : 'Új hozzáadása'} - {activeTab === 'processes' ? 'Munkafolyamat' : 'Alkatrész'}
+                </h3>
+
+                {activeTab === 'processes' ? (
+                  <form onSubmit={handleProcessSubmit}>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Munkafolyamat neve *
+                        </label>
+                        <input
+                          type="text"
+                          value={processFormData.name}
+                          onChange={(e) => setProcessFormData({...processFormData, name: e.target.value})}
+                          className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                          placeholder="pl. Szétszerelés, Tisztítás, Diagnosztika"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Kategória *
+                        </label>
+                        <select
+                          value={processFormData.category}
+                          onChange={(e) => setProcessFormData({...processFormData, category: e.target.value})}
+                          className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                          required
+                        >
+                          <option value="">Válassz kategóriát...</option>
+                          {processCategories.map(cat => (
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Becsült idő (perc)
+                        </label>
+                        <input
+                          type="number"
+                          value={processFormData.estimated_time}
+                          onChange={(e) => setProcessFormData({...processFormData, estimated_time: parseInt(e.target.value) || 0})}
+                          className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                          min="0"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Alapár (LEI)
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={processFormData.base_price}
+                          onChange={(e) => setProcessFormData({...processFormData, base_price: parseFloat(e.target.value) || 0})}
+                          className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                          min="0"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 mt-6">
+                      <button
+                        type="submit"
+                        className="flex-1 bg-green-500 text-white py-2 rounded hover:bg-green-600 font-medium"
+                      >
+                        {editingItem ? 'Frissítés' : 'Hozzáadás'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowForm(false);
+                          setEditingItem(null);
+                        }}
+                        className="flex-1 bg-gray-500 text-white py-2 rounded hover:bg-gray-600 font-medium"
+                      >
+                        Mégsem
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <form onSubmit={handlePartSubmit}>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Kategória *
+                        </label>
+                        <select
+                          value={partFormData.category}
+                          onChange={(e) => setPartFormData({...partFormData, category: e.target.value})}
+                          className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                          required
+                        >
+                          <option value="">Válassz kategóriát...</option>
+                          {partCategories.map(cat => (
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Alkatrész kód *
+                        </label>
+                        <input
+                          type="text"
+                          value={partFormData.part_code}
+                          onChange={(e) => setPartFormData({...partFormData, part_code: e.target.value})}
+                          className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 font-mono"
+                          placeholder="pl. 1303-090-400"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Beszállító *
+                        </label>
+                        <input
+                          type="text"
+                          value={partFormData.supplier}
+                          onChange={(e) => setPartFormData({...partFormData, supplier: e.target.value})}
+                          className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                          placeholder="pl. Melett, Vallion, Cer"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Ár (LEI)
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={partFormData.price}
+                          onChange={(e) => setPartFormData({...partFormData, price: parseFloat(e.target.value) || 0})}
+                          className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                          min="0"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 mt-6">
+                      <button
+                        type="submit"
+                        className="flex-1 bg-green-500 text-white py-2 rounded hover:bg-green-600 font-medium"
+                      >
+                        {editingItem ? 'Frissítés' : 'Hozzáadás'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowForm(false);
+                          setEditingItem(null);
+                        }}
+                        className="flex-1 bg-gray-500 text-white py-2 rounded hover:bg-gray-600 font-medium"
+                      >
+                        Mégsem
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Content */}
+        {activeTab === 'processes' ? (
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Munkafolyamat
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Kategória
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Becsült idő
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Alapár
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Műveletek
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredProcesses.map((process) => (
+                    <tr key={process.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{process.name}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {process.category}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {process.estimated_time > 0 ? `${process.estimated_time} perc` : '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
+                        {process.base_price > 0 ? `${process.base_price} LEI` : '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                        <button
+                          onClick={() => handleProcessEdit(process)}
+                          className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-xs"
+                        >
+                          ✏️ Szerkesztés
+                        </button>
+                        <button
+                          onClick={() => handleProcessDelete(process.id)}
+                          className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-xs"
+                        >
+                          🗑️ Törlés
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {filteredProcesses.length === 0 && (
+              <div className="text-center py-12">
+                <div className="text-gray-500 mb-4">
+                  <div className="text-6xl mb-4">⚙️</div>
+                  <p className="text-lg">Még nincsenek munkafolyamatok</p>
+                </div>
+                <button 
+                  onClick={() => setShowForm(true)}
+                  className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 font-medium"
+                >
+                  ➕ Első munkafolyamat hozzáadása
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Kategória
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Alkatrész kód
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Beszállító
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Ár
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Műveletek
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredParts.map((part) => (
+                    <tr key={part.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                          {part.category}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-mono font-medium text-gray-900">{part.part_code}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {part.supplier}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
+                        {part.price} LEI
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                        <button
+                          onClick={() => handlePartEdit(part)}
+                          className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-xs"
+                        >
+                          ✏️ Szerkesztés
+                        </button>
+                        <button
+                          onClick={() => handlePartDelete(part.id)}
+                          className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-xs"
+                        >
+                          🗑️ Törlés
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {filteredParts.length === 0 && (
+              <div className="text-center py-12">
+                <div className="text-gray-500 mb-4">
+                  <div className="text-6xl mb-4">🔧</div>
+                  <p className="text-lg">Még nincsenek turbó alkatrészek</p>
+                </div>
+                <button 
+                  onClick={() => setShowForm(true)}
+                  className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 font-medium"
+                >
+                  ➕ Első alkatrész hozzáadása
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 // Main App Component
 function TurboApp() {
