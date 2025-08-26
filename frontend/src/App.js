@@ -404,8 +404,19 @@ const Dashboard = () => {
     initialize();
   }, []);
 
+  // Refresh config when returning from settings
   useEffect(() => {
-    setConfig(getAppConfig());
+    const refreshConfig = () => {
+      const newConfig = getAppConfig();
+      setConfig(newConfig);
+    };
+    
+    // Listen for focus events (when user returns to tab)
+    window.addEventListener('focus', refreshConfig);
+    
+    return () => {
+      window.removeEventListener('focus', refreshConfig);
+    };
   }, []);
 
   // Keresés
