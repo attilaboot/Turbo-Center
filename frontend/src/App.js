@@ -113,7 +113,7 @@ const PartsTable = ({ parts, onStockMovement, onEdit, onDelete, config }) => {
                   {part.notes || "-"}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  <span className={`font-bold ${part.stock_quantity <= 0 ? 'text-red-600' : part.stock_quantity <= 5 ? 'text-yellow-600' : 'text-green-600'}`}>
+                  <span className={`font-bold ${part.stock_quantity < 0 ? 'text-red-600' : part.stock_quantity <= 5 && part.stock_quantity > 0 ? 'text-yellow-600' : part.stock_quantity === 0 ? 'text-gray-600' : 'text-green-600'}`}>
                     {part.stock_quantity} db
                   </span>
                 </td>
