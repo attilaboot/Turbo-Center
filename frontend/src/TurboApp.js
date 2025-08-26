@@ -67,7 +67,7 @@ const statusColors = {
   'DELIVERED': 'bg-gray-100 text-gray-800'
 };
 
-// Dashboard Component
+// Dashboard Component  
 const Dashboard = () => {
   const [workOrders, setWorkOrders] = useState([]);
   const [stats, setStats] = useState({
@@ -77,6 +77,24 @@ const Dashboard = () => {
     delivered: 0
   });
   const [loading, setLoading] = useState(true);
+  const [config, setConfig] = useState(getAppConfig());
+
+  // Listen for config changes
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setConfig(getAppConfig());
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    const interval = setInterval(() => {
+      setConfig(getAppConfig());
+    }, 1000);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
 
   useEffect(() => {
     loadWorkOrders();
